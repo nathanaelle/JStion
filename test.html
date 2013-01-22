@@ -66,7 +66,7 @@ var buddy = $('#buddy');
 $fi.create_operateur(
 	'param', function(x){return [ this.f_debit*x, this.f_credit*x ]}
 ).create_operateur(
-	'fixe', function(t){return function(x){return[ this.f_debit*t, this.f_credit*t ]}}
+	'constant', function(t){return function(x){return[ this.f_debit*t, this.f_credit*t ]}}
 ).create_operateur(
 	'taux', function(t){ t=t/100; return function(x){ return[ this.f_debit*t*x, this.f_credit*t*x ]} }
 ).create_operateur(
@@ -82,8 +82,8 @@ var fournisseur = $fi.op('param'	)(	'401'	,0,1, 'montant payé au fournisseur'		
 var reg_fourn	= $fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur');
 var sortie_bnk	= $fi.op('param'	)(	'512'	,0,1, 'sortie de la banque'						);
 var escompte	= $fi.op('taux'		)(	'765'	,0,1, "taux d'escompte"							);
-var fraisport	= $fi.op('fixe'		)(	'624'	,1,0, "montat frais de transport"				);
-var assurance	= $fi.op('fixe'		)(	'616'	,1,0, "montant fraisd'assurance"				);
+var fraisport	= $fi.op('constant'	)(	'624'	,1,0, "montat frais de transport"				);
+var assurance	= $fi.op('constant'	)(	'616'	,1,0, "montant fraisd'assurance"				);
 
 console.log( JSON.stringify( marchandise ) );
 
