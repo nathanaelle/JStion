@@ -123,29 +123,21 @@ function l(m){buddy.append('<pre>'+JSON.stringify(m,null,"  ")+'</pre>')}
 	h('Balance des comptes après écritures');
 
 	var societe = $fi.societe( 'ma societe' );
-	var e_soc	= new $fi.m.Entite({ entite:societe});
-	buddy.append( (new $fi.v.Balance({ model: e_soc })).render().el );
+	buddy.append( (new $fi.v.Balance({ model: new $fi.m.Entite({ entite: societe }) })).render().el );
 
-	//window.k_debug = true;
-	societe.commit( a1 );
-	societe.commit( a2 );
-	societe.commit( a3 );
-	societe.commit( a4 );
-	societe.commit( a5 );
-	societe.commit( a6 );
-	buddy.append( (new $fi.v.Balance({ model:e_soc })).render().el );
+	societe=societe.commit( a1 ).commit( a2 ).commit( a3 ).commit( a4 ).commit( a5 ).commit( a6 );
+
+	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
 	h('Recharge de la compta sur dernier état connu');
-	buddy.append( (new $fi.v.Balance({ model:e_soc })).render().el );
+	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
-	var societe2 = $fi.societe( 'ma societe' );
-	var e_soc2	= new $fi.m.Entite({ entite:societe2 });
-
-	buddy.append( (new $fi.v.Balance({ model: e_soc2 })).render().el );
+	buddy.append( (new $fi.v.Balance({ model: new $fi.m.Entite({ entite:$fi.societe( 'ma societe' )}) })).render().el );
 
 	h('Journal des écritures');
-	buddy.append( (new $fi.v.Journal({ model: e_soc2 })).render().el );
+	buddy.append( (new $fi.v.Journal({ model: new $fi.m.Entite({ entite:$fi.societe( 'ma societe' )}) })).render().el );
 
+	var societe2 = $fi.societe( 'ma societe' );
 	h('historique antéchronologique');
 	l( societe2.history() );
 

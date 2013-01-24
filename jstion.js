@@ -92,6 +92,27 @@
 	};
 
 
+
+
+
+	/**
+	 * Hash Class
+	 * @type {Object}
+	 */
+	var Hash = create_class(
+		function(o){
+			if(!o)	return;
+			for(var i in o)		if(o.hasOwnProperty(i))	this[i] = o[i];
+		},{
+			concat:function(o){
+				var r = new Hash(this);
+				for(var i in o)	if(o.hasOwnProperty(i))	this[i] = o[i];
+				return r;
+			},
+		},Object);
+
+
+
 	/**
 	 * Accounting Large Object
 	 *
@@ -171,23 +192,72 @@
 	 * @param  {[type]} o [description]
 	 * @return {[type]}   [description]
 	 */
-	var $fi = function(o){
-		o=o||{};
-		o.storage=o.storage||'';
+	var $fi = create_class(
+		function(o){
+			o=o||{};
+			o.storage=o.storage||'';
 
-		this.operateurs = {};
+			this.storage= StorageEngine[( o.storage in StorageEngine && o.storage )||'fake'];
 
-		this.storage= StorageEngine[( o.storage in StorageEngine && o.storage )||'fake'];
-		this.fix	= ( 'fix' in o && o.fix ) || 2;
+			//if( Backbone !== undefined && Backbone.sync !== $fi.fn.sync ) Backbone.sync = $fi.fn.sync;
 
-		if( Backbone !== undefined && Backbone.sync !== $fi.fn.sync ) Backbone.sync = $fi.fn.sync;
-	};
+			var id = this.storage.getItem( 'JStion_HEAD' );
+
+			if(!id)	return this._set_default(o);
+
+			this._set_default( (JSON.parse( this.storage.getItem( id ) ) ).data || o );
+		},{
+
+			toJSON: function(){ return {  parent: this.parent, e: this.e, entites: this.entites, fix:this.fix  } },
+
+			_set_default:function(o){
+				this.set_or_default(o,{
+					fix: 2,
+					e:{
+						parent: undefined,
+						operateurs: {},
+						mouvements: {},
+						operations: {},
+					},
+					entites:{
+
+					},
+					id: undefined,
+				})
+			},
+
+
+			societe: function(name){
+				return this.sync('read', { id:this.entites[name] } ) || new this.Entite({ nom: name, $:this })
+			},
+
+			shortify: function(l){
+				return l.map(function(i){ return i.id.substr(i.id.indexOf(':')+1,4) }).join(' ')
+			},
+
+			want: function(f){
+				return new this.promise(f)
+			},
+
+			save:function(o){
+				this.parent = this.id;
+				console.log( );
+				this.sync('update',this);
+				this.storage.setItem( 'JStion_HEAD', this.id );
+			},
+
+			update: function(o){
+				this.entites[o.nom] = o.id;
+				this.save();
+				return o
+			},
+
+
+
+		},ALO);
 
 	$fi.fn = $fi.prototype;
 
-	$fi.fn.societe = function(name){
-		return this.sync('read',{ id: 'Entite:'+name }) || new this.Entite({ nom: name, $:this });
-	}
 
 
 	$fi.fn.sync = function(method,model,options){
@@ -239,9 +309,6 @@
 
 	};
 
-	$fi.fn.shortify = function(l){
-		return l.map(function(i){ return i.id.substr(i.id.indexOf(':')+1,4) }).join(' ')
-	};
 
 	$fi.fn.promise=create_class(
 		function(f){
@@ -264,11 +331,6 @@
 			toJSON: function(){ return [ 'want', this.f ] }
 		} );
 
-
-
-	$fi.fn.want=function(f){
-		return new $fi.fn.promise(f);
-	};
 
 
 	$fi.fn.Operation=(function(){
@@ -314,7 +376,7 @@
 
 
 	$fi.fn.op = function(name){
-		return this.operateurs[name] || function(){ console.log('operateur '+ c +' indefini') };
+		return this.e.operateurs[name] || function(){ console.log('operateur '+ c +' indefini') };
 	}
 
 
@@ -327,7 +389,7 @@
 	 * @return {Function}      [description]
 	 */
 	$fi.fn.create_operateur = function(name,ope){
-		this.operateurs[name]=function(account,f_debit,f_credit,help){
+		this.e.operateurs[name]=function(account,f_debit,f_credit,help){
 			var f = function(x){
 				var y = ope.apply({ f_debit:f_debit,f_credit:f_credit  }, [x] );
 				if( y instanceof Function ) {
@@ -344,6 +406,8 @@
 
 			return f;
 		}
+
+		this.save();
 
 		return this;
 	}
@@ -667,22 +731,25 @@
 	$fi.fn.Entite= create_class(
 		function(o){
 			this.set_or_default(o,{
-				parent:[],
+				parent:undefined,
 				nom:'acme',
 				livre:undefined,
 				mode:'abrege',
 				fiche:{},
+				tags:{},
 				id:undefined,
 				$:undefined
 			});
 
+			this.tags	= new Hash( this.tags );
+			this.fiche	= new Hash( this.fiche );
+
 			if( this.livre === undefined ){
 				this.livre=( new this.$.Livre({ mode: this.mode, $:this.$ }) ).id;
-				this.save();
 			}
+			if(!this.id) this.save();
 		},{
-			sign:function(){ return 'Entite:'+this.nom; },
-			toJSON:function(){ return { nom:this.nom, mode:this.mode, fiche:this.fiche, livre:this.livre }; },
+			toJSON:function(){ return { parent:this.parent, nom:this.nom, mode:this.mode, fiche:this.fiche, livre:this.livre, tags:this.tags } },
 			toVSON:function(){
 				var r =this.toJSON();
 				r.livre=this.lod('livre').toVSON();
@@ -690,10 +757,32 @@
 				return r;
 			},
 
+			tag:function(tag)	{ return this.lod(this.tags[tag])	},
+			set_tag:function(tag,livre_ref)	{
+				var t = {};
+				t[tag] = livre_ref || this.livre;
+
+				return $this.$.update( new $fi.fn.Entite({
+					parent: this.id,
+					nom: this.nom,
+					livre: this.livre,
+					mode: this.mode,
+					fiche: this.fiche,
+					tags: this.tag.concat( t ),
+					$:this.$,
+				}) )
+			},
+
 			commit:function(e){
-				this.livre = this.lod('livre').commit(e).id;
-				this.save();
-				return this;
+				return this.$.update( new $fi.fn.Entite({
+					parent: this.id,
+					nom: this.nom,
+					livre: this.lod('livre').commit(e).id,
+					mode: this.mode,
+					fiche: this.fiche,
+					tags:this.tags,
+					$:this.$,
+				}) )
 			},
 
 			log:function()		{ return this.lod('livre').log()		},
@@ -702,20 +791,6 @@
 			diff:function(id)	{ return this.lod('livre').diff(id)		},
 
 		}, ALO );
-
-
-	$fi.fn.Entites= Backbone.Collection.extend({
-		model:$fi.fn.Entite,
-
-		initialize:function(o){
-			var e=this;
-			$fi.fn.sync('read',this,{});
-		},
-
-		toJSON:		function(	){ return this.map(function(m){ return {id:m.id,name:m.name};	}) ;},
-		toVSON:		function(	){ return {'list': this.toJSON() }; },
-		save:		function(	){ $fi.fn.sync('update',this,{ success:function(){}			}) ;},
-	});
 
 	[ 'Comptes', 'Compte', 'Ecriture', 'Journal', 'Livre', 'Entite', 'Operation' ].forEach(function(k){instanciable[k]=$fi.fn[k]});
 
