@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>test JStion</title>
+<script src="j/jquery.js"></script>
+<script src="j/underscore.js"></script>
+<script src="j/backbone.js"></script>
+<script src="j/rollups/hmac-sha1.js"></script>
+<script src="jstion.js"></script>
+<script src="jstion-ui.js"></script>
+<style>
+html{
+	font-size:10pt;
+	font-family:Sans-Serif;
+}
+
+body{
+	margin:0 5em;
+}
+
+table{
+	margin:2em;
+	border-collapse:collapse;
+	float:left;
+}
+
+dd table{
+	float:none;
+}
+
+caption{
+	margin:1.5em;
+	font-size:75%;
+}
+
+td{
+	margin:0;
+	padding:0;
+	width:6em;
+	text-align:right;
+	border:0 none;
+	border-top:1px solid #000;
+	border-left:1px solid #000;
+}
+
+tr+tr+tr td{border-top:0 none;}
+tr{margin:0;padding:0;}
+
+h1{
+	font-size:1em;
+	padding:5px 0;
+	clear:both;
+	border:1px double #000;
+	border-left: 0 none;
+	border-right: 0 none;
+}
+
+
+table.etat{
+	margin:2em;
+	padding:0;
+	width:100%;
+	border:0;
+}
+
+table.etat tr td {
+	margin:0;
+	padding:0;
+	width:50%;
+	border: 1px solid #000;
+	vertical-align:top;
+}
+
+table.etat tr td table {
+	margin:0;
+	padding:0;
+	width:100%;
+	border:0;
+}
+
+table.etat tr td table tr td {
+	margin:0;
+	padding:0.3em;
+	width:75%;
+	border:0;
+	text-align:left;
+}
+table.etat td table tr td+td {
+	width:25%;
+	text-align:right;
+}
+
+table.etat tr td table tr.h1 td {
+	font-size:1.1em;
+	font-weight:800;
+}
+
+table.etat tr td table tr.h2 td {
+	font-weight:600;
+}
+
+
+</style>
+</head>
+<body id='buddy'>
+<script>
+
+var buddy = $('#buddy');
+function h(t){buddy.append('<h1>'+t+'</h1>')}
+function l(m){buddy.append('<pre>'+JSON.stringify(m,null,"  ")+'</pre>')}
+
+window.k_debug = false;
+//φ=1;
+
+/*
+ * Definitions des operateurs
+ */
+$fi.create_operateur(
+	'param', function(x){return [ this.f_debit*x, this.f_credit*x ]}
+).create_operateur(
+	'constant', function(t){return function(x){return[ this.f_debit*t, this.f_credit*t ]}}
+).create_operateur(
+	'taux', function(t){ t=t/100; return function(x){ return[ this.f_debit*t*x, this.f_credit*t*x ]} }
+).create_operateur(
+	'itaux', function(t){ t=1-1/(1+t/100); return function(x){return[ this.f_debit*t*x, this.f_credit*t*x ]} }
+)
+
+/*
+ * Definitions des operations sur certains comptes
+ */
+var marchandise	= $fi.op('param'	)(	'607'	,1,0, 'montant marchandise'						);
+var tva			= $fi.op('taux'		)(	'44566'	,1,0, 'taux tva'								);
+var avoir_tva	= $fi.op('itaux'	)(	'44566'	,0,1, 'taux tva'								);
+var remise		= $fi.op('taux'		)(	'607'	,0,1, 'taux remise'								);
+var fournisseur = $fi.op('param'	)(	'401'	,0,1, 'montant payé au fournisseur'				);
+var reg_fourn	= $fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur');
+var sortie_bnk	= $fi.op('param'	)(	'512'	,0,1, 'sortie de la banque'						);
+var escompte	= $fi.op('taux'		)(	'765'	,0,1, "taux d'escompte"							);
+var fraisport	= $fi.op('constant'	)(	'624'	,1,0, "montat frais de transport"				);
+var assurance	= $fi.op('constant'	)(	'616'	,1,0, "montant frais d'assurance"				);
+
+console.log( JSON.stringify( marchandise ) );
+
+/*
+ * Definitions des template d'écriture
+ */
+var achat_fournisseur				= $fi.Operation( $fi.want(marchandise), $fi.want(tva), fournisseur );
+var achat_avec_remise_et_escompte	= $fi.Operation( $fi.want(marchandise), $fi.want(remise),$fi.want(escompte),tva(19.6),fournisseur );
+var achat_avec_forfait_assu_port	= $fi.Operation( $fi.want(marchandise), $fi.want(fraisport),assurance(100),tva(19.6),fournisseur );
+var paie_escompte_achat_fourniture	= $fi.Operation( $fi.want(reg_fourn), avoir_tva(19.6), $fi.want(escompte), tva(19.6), sortie_bnk );
+var paie_achat_fourniture			= $fi.Operation( $fi.want(reg_fourn), sortie_bnk );
+
+console.log( JSON.stringify( paie_escompte_achat_fourniture ) );
+
+/*
+ * Création d'écritures
+ */
+a1	= achat_fournisseur				( 'achat fournisseur avec TVA à 10%'									, '2012-01-01',1000,10 );
+a2	= achat_avec_remise_et_escompte	( "achat fournisseur de 15000€ HT avec 10% remise et 4% d'escompte"		, '2012-01-01',15000, 10, 4	);
+a3	= achat_avec_forfait_assu_port	( 'achat fournisseur de 2500€ HT avec frais de port et assurance'		, '2012-01-01',2500, 200 );
+a4	= achat_avec_forfait_assu_port	( 'achat fournisseur de 2500€ HT avec frais de port et assurance'		, '2012-01-01',9000, 500 );
+a5	= paie_escompte_achat_fourniture( 'paiement fournisseur de 9568€ TTC avec escompte à 3%'				, '2012-01-01',9568,3 );
+
+a6	= achat_fournisseur				('achat avec TVA à 19.6%'												, '2012-01-01', 1999, 19.6 ).o(
+	paie_achat_fourniture			('paiement immediat sans escompte'										, '', 1999*1.196 )
+	);
+
+//try{
+	h('Écritures');
+
+	buddy.append( (new $fi.v.Ecriture({ model:a1 })).render().el );
+	buddy.append( (new $fi.v.Ecriture({ model:a2 })).render().el );
+	buddy.append( (new $fi.v.Ecriture({ model:a3 })).render().el );
+	buddy.append( (new $fi.v.Ecriture({ model:a4 })).render().el );
+	buddy.append( (new $fi.v.Ecriture({ model:a5 })).render().el );
+	buddy.append( (new $fi.v.Ecriture({ model:a6 })).render().el );
+
+
+	h('Balance des comptes après écritures');
+
+	var societe = new $fi.Entite({ nom: 'ma societe', mode:'abrege', $:$fi })
+
+	societe=societe
+		.commit( a1 )
+		.commit( a2 )
+		.commit( a3 )
+		.commit( a4 )
+		.commit( a5 )
+		.commit( a6 );
+
+	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
+
+	h('Recharge de la compta sur dernier état connu');
+	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
+
+	buddy.append( (new $fi.v.Balance({ model: new $fi.m.Entite({ entite:$fi.societe( 'ma societe' )}) })).render().el );
+
+	var societe2 = $fi.societe( 'ma societe' );
+
+	h('Journal des écritures');
+	buddy.append( (new $fi.v.Journal({ model: new $fi.m.Entite({ entite:societe2 }) })).render().el );
+
+	h('historique antéchronologique');
+	l( societe2.history() );
+
+	h('antépénultième commit');
+	l( societe2.back(2).log() );
+
+	h('diff entre 2 commits consécutif');
+	buddy.append( (new $fi.v.Ecriture({ model: societe2.diff(societe2.back(1)) })).render().el );
+
+	h('diff entre 2 commits séparé de 2');
+	buddy.append( (new $fi.v.Ecriture({ model: societe2.diff(societe2.back(2)) })).render().el );
+
+//}catch(e){}
+
+h('contenu stocké');
+l($fi.storage);
+
+</script></body>
+</html>
