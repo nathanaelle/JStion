@@ -62,6 +62,32 @@ window.$fi.fn.v={
 		render:function(ev){ $(this.el).html(this.template(this.model.toVSON())); return this; },
 	}),
 
+	Fragment: Backbone.View.extend({
+		el:'<table>',
+		template:_.template(
+			'<tr><th>compte</th><th>debit</th><th>credit</th></tr>'+
+			'<% _.each( d, function(l){ %><tr><th><%= l[0] %></th><td><%= l[1] %></td><td><%= l[2] %></td></tr> <% }) %></table>' ),
+
+		render:function(ev){ $(this.el).html(this.template({d:this.model.toVSON()})); return this; },
+	}),
+
+	Etat: Backbone.View.extend({
+		tagName:'table',
+		className:'etat',
+		template:_.template(
+			'<table><% _.each( d, function(l){ %><tr class="h<%= l[0].split("#").length-1 %>"><td><%= l[0].split("#").pop() %></td><td><%= l[1] %></td> <% }) %></table>' ),
+
+		render:function(ev){
+
+
+
+			$(this.el).html('<tr><td>'+this.template({d:this.model.col_1.toVSON()}) +'</td><td>'+this.template({d:this.model.col_2.toVSON()})+'</td></tr>');
+			return this; },
+	}),
+
+
+
+
 	WantedBox: Backbone.View.extend({
 		el:'<div>',
 		template:_.template('<a href="#" class="close">fermer</a><form class="signin" action="#"><fieldset class="textbox"><legend><%=titre%></legend>'+

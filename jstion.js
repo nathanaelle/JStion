@@ -52,16 +52,34 @@
 	var create_monad=function(modifier){
 		var prototype = Object.create(null);
 		prototype.is_monad=true;
-		return function (value){
+		var unit = function (value){
 			var monad = Object.create(prototype);
 			monad.bind = function(func,args){
 				return func.apply( undefined, [value].concat(Array.prototype.slice.apply(args || [])) );
 			};
 			if(typeof modifier === 'function'){
-				modifier(monad,value);
+				value=modifier(monad,value);
 			}
 			return monad;
-		}
+		};
+		unit.method = function (name, func) {
+			prototype[name] = func;
+			return unit;
+		};
+		unit.lift_value = function (name, func) {
+			prototype[name] = function () {
+				return this.bind(func, arguments);
+			};
+			return unit;
+			};
+		unit.lift = function (name, func) {
+			prototype[name] = function () {
+				var result = this.bind(func, arguments);
+				return result && result.is_monad === true ? result : unit(result);
+			};
+			return unit;
+		};
+		return unit;
 	}
 
 
@@ -241,7 +259,6 @@
 
 			save:function(o){
 				this.parent = this.id;
-				console.log( );
 				this.sync('update',this);
 				this.storage.setItem( 'JStion_HEAD', this.id );
 			},
@@ -323,7 +340,7 @@
 				var prom = this;
 				var f = (prom.f)(prom.constrain(x));
 				if(f instanceof Function) return f;
-				//console.log([x, f]);
+				// console.log([ 'exec', x, f]);
 				return function(v){
 					return (prom.f)(prom.constrain(x));
 				};
@@ -334,23 +351,27 @@
 
 
 	$fi.fn.Operation=(function(){
-		var f = function(epz){
-			this.epz = epz;
-			this.needs = epz.filter(function(e){ return e instanceof $fi.fn.promise});
-		},
-		reduce = function(x){
+		var f = function(mouvement){
+			this.mouvement = mouvement;
+			this.needs = mouvement.filter(function(e){ return e instanceof $fi.fn.promise});
+		};
+		var reduct_signed = function(x){
 			return x.map(function(e){ return e[1]-e[2]; }).reduce(function(a,b){ return a+b; },0);
+		};
+		var reduct = function(x){
+			return Math.abs(x.map(function(e){ return e[1]-e[2]; }).reduce(function(a,b){ return a+b; },0));
 		};
 
 
 		f.prototype={
 			compose:function(vars){
 				if(this.needs.length > vars.length ) vars = this.needs[0].grab( this.needs, vars );
-				return this.epz.reduce(function(e1,e2){
+				return this.mouvement.reduce(function(e1,e2){
+					// console.log([ 'compose',e1,e2,vars])
 					if(e2 instanceof $fi.fn.promise){
 						e2 = e2.exec(vars.shift());
 					}
-					return e2(reduce(e1)).concat(e1);
+					return e2(reduct(e1)).concat(e1);
 				}, [] );
 			}
 		};
@@ -365,7 +386,10 @@
 					date:args[1],
 					mouvement: o.compose( args.slice(2) )
 				};
-				if(reduce(e.mouvement)) console.log('bordel');
+				if(reduct(e.mouvement)){
+					console.log('bordel');
+					console.log(e);
+				}
 				return new $fi.fn.Ecriture(e);
 			};
 			r.toJSON=function(){ return ope };
@@ -413,6 +437,85 @@
 	}
 
 
+	$fi.fn.aggregate = function(){
+		var args = [].concat( Array.prototype.slice.call( arguments ) );
+
+		if(typeof args[0] === 'string'){
+			var message = args.shift();
+
+			return function(societe){
+				part = new $fi.fn.Fragment();
+				args.forEach(function(c){
+					if(typeof c === 'function' ) part = part.add( c(societe) );
+				else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
+					else if(c>0){
+						part = part.add(societe.flux(""+c))
+					}else if(c<0){
+						part = part.sub(societe.flux(""+(-c)))
+					}
+				})
+
+				return part.simplify(message);
+			}
+		}
+
+		return function(societe){
+			part = new $fi.fn.Fragment();
+			args.forEach(function(c){
+				if(typeof c === 'function' ) part = part.add( c(societe) );
+				else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
+				else if(c>0){
+					part = part.add(societe.flux(""+c))
+				}else if(c<0){
+					part = part.sub(societe.flux(""+(-c)))
+				}
+			})
+
+			return part;
+		}
+	}
+
+
+
+	$fi.fn.ag_debit=function(){
+		var args = [].concat( Array.prototype.slice.call( arguments ) );
+
+		return function(societe){
+			part = new $fi.fn.Fragment();
+			args.forEach(function(c){
+				if(typeof c === 'function' ) part = part.add( c(societe).debit() );
+				else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.debit() );
+				else if(c>0){
+					part = part.add(societe.flux(""+c).debit())
+				}else if(c<0){
+					part = part.sub(societe.flux(""+(-c)).debit())
+				}
+			})
+
+			return part;
+		}
+	}
+
+	$fi.fn.ag_credit=function(){
+		var args = [].concat( Array.prototype.slice.call( arguments ) );
+
+		return function(societe){
+			part = new $fi.fn.Fragment();
+			args.forEach(function(c){
+				if(typeof c === 'function' ) part = part.add( c(societe).credit() );
+				else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.credit() );
+				else if(c>0){
+					part = part.add(societe.flux(""+c).credit())
+				}else if(c<0){
+					part = part.sub(societe.flux(""+(-c)).credit())
+				}
+			})
+
+			return part;
+		}
+	}
+
+
 	/**
 	 * [Ecriture description]
 	 */
@@ -433,6 +536,44 @@
 
 
 	/**
+	 * [Ecriture description]
+	 */
+	$fi.fn.Fragment=create_class(
+		function(e){
+			this.single=false;
+			if(e ===undefined) e=[];
+			Array.prototype.push.apply( this, e );
+		},{
+			toJSON:		function(	){ return this.map(function(f){ return f })},
+			toVSON:		function(	){
+				if(this.single)
+					return this.map(function(f){
+						if(f[0] === '')	return ['',''];
+						return [ f[0], (f[1]-f[2]).toFixed(this.$.fix) ] });
+
+				return this.map(function(f){
+					if(f[0] === '')	return ['','', ''];
+					return [f[0]].concat( [f[1], f[2]].map(function(i){ return (i>0?i.toFixed(this.$.fix):0) })) })
+			},
+			add:		function(f	){
+				if(f ===undefined) return this;
+				var z = [];
+				Array.prototype.push.apply( z, this );
+				Array.prototype.push.apply( z, f );
+				var r= new $fi.fn.Fragment( z );
+				return r;
+			},
+			sub:		function(f	){ return this.add(f.inv()) },
+			simplify:	function(t	){ return new $fi.fn.Fragment( [[t].concat( this.reduce(function(a,b){ return [ a[0] + b[1] , a[1] + b[2] ] },[0,0] ))] )},
+			inv:		function(	){ return new $fi.fn.Fragment( this.map(function(f){ return [ f[0], f[2], f[1] ] }) )},
+			solde:		function(	){ return new $fi.fn.Fragment( this.map(function(s){ return [s[0]].concat( [s[1]-s[2], s[2]-s[1] ].map(function(i){ return i>0?i:0; })) }) )},
+			debit:		function(	){ return new $fi.fn.Fragment( this.map(function(s){ return [s[0], s[1], 0 ] }) )},
+			credit:		function(	){ return new $fi.fn.Fragment( this.map(function(s){ return [s[0], 0, s[2] ] }) )},
+			single_col:	function(b	){ this.single=!!b; return this }
+		}, Array );
+
+
+	/**
 	 * [Journal description]
 	 */
 	$fi.fn.Journal=create_class(
@@ -447,12 +588,7 @@
 			if(this.id === undefined)	this.save();
 		},{
 			sigma:function(){
-				var d = this.debit .reduce(function(a,b){return a+b},0),
-					c = this.credit.reduce(function(a,b){return a+b},0);
-				return [
-					d?d.toFixed(this.$.fix):'',
-					c?c.toFixed(this.$.fix):'',
-				];
+				return [ this.debit .reduce(function(a,b){return a+b},0), this.credit.reduce(function(a,b){return a+b},0) ];
 			},
 
 			toJSON:function(){
@@ -508,6 +644,54 @@
 			if(this.id === undefined)			this.save();
 			else if(this.account === undefined)	this.fetch();
 		},{
+
+			find_and_map:function(targeted_accs, func ){
+				var o = this;
+				var acc = this.account;
+
+				// do I know any targeted account ?
+				targeted_accs = targeted_accs.filter( function(a){ return a.indexOf(acc) ===0; });
+
+				var maybe_empty = create_monad(function(M,v){
+					if(v.length >0 )	return v;
+					M.bind = function() { return new $fi.fn.Fragment([]) }
+					return [];
+				});
+
+				// make a list of triplet [ account, debit, credit ] for this account and its sub account
+				return maybe_empty(
+						targeted_accs.filter( function(a){ return a === acc; })
+					).bind(function(){
+						return new $fi.fn.Fragment( [ [acc].concat( func(o) ) ] );
+					}).add(
+						maybe_empty(
+							targeted_accs.filter( function(a){ return a !== acc; })
+						).bind(function(v){
+							return o.lod('subaccounts').find_any(v, func )
+						}));
+			},
+
+
+			_solde:function(s) {
+				return [s[0]-s[1], s[1]-s[0] ].map(function(i){ return i>0?i:0; });
+			},
+
+			sigma:function(){
+				return this.lod('journal').sigma();
+			},
+
+			r_sigma:function(){
+				return [ this.sigma() ].concat( this.lod('subaccounts').r_sigma() ).reduce(function(s0,s1){ return [s0[0]+s1[0], s0[1]+s1[1]] }, [0,0]);
+			},
+
+			solde:function(){
+				return this._solde( this.sigma() );
+			},
+
+			r_solde:function(){
+				return this._solde( this.r_sigma() );
+			},
+
 			diff:function(old){
 				if( this.id === old.id) return [];
 				var diff = [];
@@ -529,15 +713,15 @@
 			},
 
 			toVSON:function(){
-				var s=this.lod('journal').sigma();
+				var s=this.sigma();
 				return {
-					account:this.account,
-					nom:this.nom,
-					subaccounts:this.lod('subaccounts').toVSON(),
-					debit:s[0],
-					credit:s[1],
-					solde_debit:((s[0]-s[1]>0)?(s[0]-s[1]).toFixed(this.$.fix):''),
-					solde_credit:((s[1]-s[0]>0)?(s[1]-s[0]).toFixed(this.$.fix):''),
+					account:		this.account,
+					nom:			this.nom,
+					subaccounts:	this.lod('subaccounts').toVSON(),
+					debit:			((s[0]>0)?s[0].toFixed(this.$.fix):''),
+					credit:			((s[1]>0)?s[1].toFixed(this.$.fix):''),
+					solde_debit:	((s[0]-s[1]>0)?(s[0]-s[1]).toFixed(this.$.fix):''),
+					solde_credit:	((s[1]-s[0]>0)?(s[1]-s[0]).toFixed(this.$.fix):''),
 				}; },
 
 			mouvement:function(m){
@@ -585,6 +769,27 @@
 				}
 				return this.toJSON();
 			},
+
+			r_sigma: function(){
+				var $=this.$;
+				return this.map(function(c){
+					return new $.Compte({id: c, $:$ }).r_sigma();
+				});
+			},
+
+
+			find_any:	function(targeted_accs, func){
+				var $=this.$;
+				return this.map(function(c){
+					c=new $.Compte({id: c, $:$ });
+					return [ c, targeted_accs.filter(function(a){ return a.indexOf(c.account) ===0; }) ];
+				}).filter(function(sc){
+					return sc[1].length>0
+				}).map(function(sc){
+					return sc[0].find_and_map( sc[1], func );
+				}).reduce(function(a,b){ return a.add(b)  }, new $fi.fn.Fragment([]) );
+			},
+
 
 			mouvement:	function(m){
 				//console.log(m);
@@ -678,6 +883,8 @@
 					$:this.$,
 				});
 			},
+
+			find_any_and_map:	function(targeted_accs,func){ return this.lod('accounts').find_any(targeted_accs,func ) },
 
 			back:function(i){
 				if(i===0) return this;
@@ -785,10 +992,22 @@
 				}) )
 			},
 
-			log:function()		{ return this.lod('livre').log()		},
-			history:function()	{ return this.lod('livre').history()	},
-			back:function(i)	{ return this.lod('livre').back(i)		},
-			diff:function(id)	{ return this.lod('livre').diff(id)		},
+			etat:	function()		{
+				return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) { return c.sigma() } )
+			},
+			solde:	function()		{
+				return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) { return c.solde() } )
+			},
+
+			flux:	function()		{
+				return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) { return c.r_sigma() } );
+			},
+
+
+			log:	function()		{ return this.lod('livre').log()		},
+			history:function()		{ return this.lod('livre').history()	},
+			back:	function(i)		{ return this.lod('livre').back(i)		},
+			diff:	function(id)	{ return this.lod('livre').diff(id)		},
 
 		}, ALO );
 
