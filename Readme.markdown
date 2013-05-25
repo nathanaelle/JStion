@@ -147,3 +147,13 @@ With the 4 previous Operateurs, we can write :
 ### Operation
 
 an Operation is the aggregation of different Mouvement with the definition of the wanted arguments for this Operation.
+
+
+Sources
+------------
+
+- PGC : http://www.anc.gouv.fr/sections/normes_privees/plans_comptables/plan_comptable/downloadFile/file/pcg_maj0712.pdf
+- Bilan : http://www.insee.fr/fr/ppp/bases-de-donnees/irweb/images05/dd/doc/pdf/images05_bilan.pdf
+- Compte de résultat : http://www.insee.fr/fr/ppp/bases-de-donnees/irweb/images05/dd/doc/pdf/images05_cptr.pdf
+
+
