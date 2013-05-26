@@ -2,38 +2,38 @@
 <html>
 <head>
 <title>test JStion</title>
-<script src="j/jquery.js"></script>
-<script src="j/underscore.js"></script>
-<script src="j/backbone.js"></script>
-<script src="j/rollups/hmac-sha1.js"></script>
-<script src="jstion.js"></script>
-<script src="jstion-ui.js"></script>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+	<link rel="stylesheet" href="../stylesheets/styles.css">
+	<link rel="stylesheet" href="../stylesheets/pygment_trac.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<script src="j/jquery.js"></script>
+	<script src="j/underscore.js"></script>
+	<script src="j/backbone.js"></script>
+	<script src="j/rollups/hmac-sha1.js"></script>
+	<script src="jstion.js"></script>
+	<script src="jstion-ui.js"></script>
 <style>
-html{
-	font-size:9pt;
-	font-family:Sans-Serif;
-}
-
-body{
-	margin:0 5em;
-}
-
-table{
+#buddy table{
 	margin:2em;
 	border-collapse:collapse;
 	float:left;
 }
 
-dd table{
+#buddy dd table{
 	float:none;
 }
 
-caption{
+#buddy caption{
 	margin:1.5em;
 	font-size:75%;
 }
 
-td{
+#buddy td{
 	margin:0;
 	padding:0;
 	width:6em;
@@ -43,10 +43,10 @@ td{
 	border-left:1px solid #000;
 }
 
-tr+tr+tr td{border-top:0 none;}
-tr{margin:0;padding:0;}
+#buddy tr+tr+tr td{border-top:0 none;}
+#buddy tr{margin:0;padding:0;}
 
-h1{
+#buddy hz{
 	font-size:1em;
 	padding:5px 0;
 	clear:both;
@@ -56,14 +56,14 @@ h1{
 }
 
 
-table.etat{
+#buddy table.etat{
 	margin:2em;
 	padding:0;
 	width:100%;
 	border:0;
 }
 
-table.etat tr td {
+#buddy table.etat tr td {
 	margin:0;
 	padding:0;
 	width:50%;
@@ -71,42 +71,90 @@ table.etat tr td {
 	vertical-align:top;
 }
 
-table.etat tr td table {
+#buddy table.etat tr td table {
 	margin:0;
 	padding:0;
 	width:100%;
 	border:0;
 }
 
-table.etat tr td table tr td {
+#buddy table.etat tr td table tr td {
 	margin:0;
 	padding:0.3em;
 	width:75%;
 	border:0;
 	text-align:left;
 }
-table.etat td table tr td+td {
+
+#buddy table.etat td table tr td+td {
 	width:25%;
 	text-align:right;
 }
 
-table.etat tr td table tr.h1 td {
+#buddy table.etat tr td table tr.h1 td {
 	font-size:1.1em;
 	font-weight:800;
 }
 
-table.etat tr td table tr.h2 td {
+#buddy table.etat tr td table tr.h2 td {
 	font-weight:600;
 }
 
-
 </style>
 </head>
-<body id='buddy'>
+<body>
+<div class="wrapper">
+	<header>
+		<h1>Jstion</h1>
+		<p>Financial Accounting in JS</p>
+		<p class="view"><a href="https://github.com/nathanaelle/JStion">View the Project on GitHub <small>nathanaelle/JStion</small></a></p>
+		<ul>
+			<li><a href="https://github.com/nathanaelle/JStion/zipball/master">Download <strong>ZIP File</strong></a></li>
+			<li><a href="https://github.com/nathanaelle/JStion/tarball/master">Download <strong>TAR Ball</strong></a></li>
+			<li><a href="https://github.com/nathanaelle/JStion">View On <strong>GitHub</strong></a></li>
+		</ul>
+	</header>
+	<section  id='buddy'>
+		<h1>Demo 2 : cas concret</h1>
+
+		<p>Chargement d'une entité nommée "FOOBAR SASU", utilisant le plan comptable de base</p>
+		<pre>
+			var societe = new $fi.Entite({ nom: 'FOOBAR SASU', mode:'basique', $:$fi })
+		</pre>
+
+		<p>passage de chaque écriture</p>
+		<pre>
+			societe=societe
+				.commit( o.constitution.sequestre		('constitution societe FOOBAR SASU'	,'2013-01-01', 1000		))
+				.commit( o.constitution.remise_fond		( 'remise des fonds -100€ constit'	,'2013-01-01', 1000	,100	))
+				.commit( o.constitution.virement_pour_ordre	('virement pour ordre'			,'2013-01-01', 1000		))
+				.commit(
+					o.fournisseur.achat_marchandise		('achat Tablette à 19.6%'		,'2013-01-01', 600, 19.6	).o(
+					o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 600*1.196 	))
+				)
+				.commit(
+					o.fournisseur.non_stockable		('téléphonie mobile - janvier'		,'2013-01-01', 25, 19.6		).o(
+					o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 25*1.196 	))
+				)
+				.commit(o.client.vente_service			('vente audit'				,'2013-01-01', 2000, 19.6	))
+				.commit(o.client.encaissement			('encaissement'				,'2013-01-01', 2000*1.196	))
+			;
+		</pre>
+
+
+
+
+	</section>
+	<footer>
+		<p>This project is maintained by <a href="https://github.com/nathanaelle">nathanaelle</a></p>
+		<p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+	</footer>
+</div>
+<script src="javascripts/scale.fix.js"></script>
 <script>
 
 var buddy = $('#buddy');
-function h(t){buddy.append('<h1>'+t+'</h1>')}
+function h(t){buddy.append('<h2>'+t+'</h2>')}
 function l(m){buddy.append('<pre>'+JSON.stringify(m,null,"  ")+'</pre>')}
 
 window.k_debug = false;
