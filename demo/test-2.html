@@ -35,7 +35,6 @@
 
 #buddy td{
 	margin:0;
-	padding:0;
 	width:6em;
 	text-align:right;
 	border:0 none;
@@ -119,26 +118,26 @@
 
 		<p>Chargement d'une entité nommée "FOOBAR SASU", utilisant le plan comptable de base</p>
 		<pre>
-			var societe = new $fi.Entite({ nom: 'FOOBAR SASU', mode:'basique', $:$fi })
+var societe = new $fi.Entite({ nom: 'FOOBAR SASU', mode:'basique', $:$fi })
 		</pre>
 
 		<p>passage de chaque écriture</p>
 		<pre>
-			societe=societe
-				.commit( o.constitution.sequestre		('constitution societe FOOBAR SASU'	,'2013-01-01', 1000		))
-				.commit( o.constitution.remise_fond		( 'remise des fonds -100€ constit'	,'2013-01-01', 1000	,100	))
-				.commit( o.constitution.virement_pour_ordre	('virement pour ordre'			,'2013-01-01', 1000		))
-				.commit(
-					o.fournisseur.achat_marchandise		('achat Tablette à 19.6%'		,'2013-01-01', 600, 19.6	).o(
-					o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 600*1.196 	))
-				)
-				.commit(
-					o.fournisseur.non_stockable		('téléphonie mobile - janvier'		,'2013-01-01', 25, 19.6		).o(
-					o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 25*1.196 	))
-				)
-				.commit(o.client.vente_service			('vente audit'				,'2013-01-01', 2000, 19.6	))
-				.commit(o.client.encaissement			('encaissement'				,'2013-01-01', 2000*1.196	))
-			;
+societe=societe
+  .commit( o.constitution.sequestre		('constitution societe FOOBAR SASU'	,'2013-01-01', 1000		))
+  .commit( o.constitution.remise_fond		( 'remise des fonds -100€ constit'	,'2013-01-01', 1000	,100	))
+  .commit( o.constitution.virement_pour_ordre	('virement pour ordre'			,'2013-01-01', 1000		))
+  .commit(
+	o.fournisseur.achat_marchandise		('achat Tablette à 19.6%'		,'2013-01-01', 600, 19.6	).o(
+	o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 600*1.196 	))
+  )
+  .commit(
+	o.fournisseur.non_stockable		('téléphonie mobile - janvier'		,'2013-01-01', 25, 19.6		).o(
+	o.fournisseur.paiement			('paiement immediat'			,'2013-01-01', 25*1.196 	))
+  )
+  .commit(o.client.vente_service		('vente audit'				,'2013-01-01', 2000, 19.6	))
+  .commit(o.client.encaissement			('encaissement'				,'2013-01-01', 2000*1.196	))
+;
 		</pre>
 
 
