@@ -26,6 +26,7 @@ $fi.fn.Fragment=create_class(
 
 			return this.map(function(f){
 				if(f[0] === '')	return ['','', ''];
+
 				return [f[0]].concat( [f[1], f[2]].map(function(i){
 					return (i>0?i.toFixed(this.$.fix):0);
 				}));
@@ -33,15 +34,9 @@ $fi.fn.Fragment=create_class(
 		},
 
 		add:function(f){
-			if(f ===undefined) return this;
-			var z = [];
+			if(f === undefined) return this;
 
-			Array.prototype.push.apply( z, this );
-			Array.prototype.push.apply( z, f );
-
-			var r= new $fi.fn.Fragment( z );
-
-			return r;
+			return new $fi.fn.Fragment( [].concat( this, f ) );
 		},
 
 		sub:function(f){

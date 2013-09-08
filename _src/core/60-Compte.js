@@ -35,14 +35,6 @@ $fi.fn.Compte=create_class(
 				return a.indexOf(acc) ===0;
 			});
 
-			var maybe_empty = create_monad(function(M,v){
-				if(v.length >0 )	return v;
-				M.bind = function() {
-					return new $fi.fn.Fragment([]);
-				};
-				return [];
-			});
-
 			// make a list of triplet [ account, debit, credit ] for this account and its sub account
 			return maybe_empty(
 					targeted_accs.filter( function(a){
