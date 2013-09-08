@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset='UTF-8'>
 <title>test JStion</title>
-<script src="j/jquery.js"></script>
-<script src="j/underscore.js"></script>
-<script src="j/backbone.js"></script>
-<script src="j/rollups/hmac-sha1.js"></script>
-<script src="jstion.js"></script>
-<script src="jstion-ui.js"></script>
+<script src="../../_dep/jquery.js"></script>
+<script src="../../_dep/underscore.js"></script>
+<script src="../../_dep/backbone.js"></script>
+<script src="../../_dep/rollups/hmac-sha1.js"></script>
+<script src="../../build/JStion.min.js"></script>
+<script src="../../build/JStion.UI-backbone.min.js"></script>
 <style>
 html{
 	font-size:10pt;
@@ -129,9 +130,9 @@ $fi.create_operateur(
  * Definitions des operations sur certains comptes
  */
 var marchandise	= $fi.op('param'	)(	'607'	,1,0, 'montant marchandise'						);
-var tva			= $fi.op('taux'		)(	'44566'	,1,0, 'taux tva'								);
+var tva		= $fi.op('taux'		)(	'44566'	,1,0, 'taux tva'								);
 var avoir_tva	= $fi.op('itaux'	)(	'44566'	,0,1, 'taux tva'								);
-var remise		= $fi.op('taux'		)(	'607'	,0,1, 'taux remise'								);
+var remise	= $fi.op('taux'		)(	'607'	,0,1, 'taux remise'								);
 var fournisseur = $fi.op('param'	)(	'401'	,0,1, 'montant payé au fournisseur'				);
 var reg_fourn	= $fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur');
 var sortie_bnk	= $fi.op('param'	)(	'512'	,0,1, 'sortie de la banque'						);
@@ -144,25 +145,25 @@ console.log( JSON.stringify( marchandise ) );
 /*
  * Definitions des template d'écriture
  */
-var achat_fournisseur				= $fi.Operation( $fi.want(marchandise), $fi.want(tva), fournisseur );
+var achat_fournisseur			= $fi.Operation( $fi.want(marchandise), $fi.want(tva), fournisseur );
 var achat_avec_remise_et_escompte	= $fi.Operation( $fi.want(marchandise), $fi.want(remise),$fi.want(escompte),tva(19.6),fournisseur );
 var achat_avec_forfait_assu_port	= $fi.Operation( $fi.want(marchandise), $fi.want(fraisport),assurance(100),tva(19.6),fournisseur );
 var paie_escompte_achat_fourniture	= $fi.Operation( $fi.want(reg_fourn), avoir_tva(19.6), $fi.want(escompte), tva(19.6), sortie_bnk );
-var paie_achat_fourniture			= $fi.Operation( $fi.want(reg_fourn), sortie_bnk );
+var paie_achat_fourniture		= $fi.Operation( $fi.want(reg_fourn), sortie_bnk );
 
 console.log( JSON.stringify( paie_escompte_achat_fourniture ) );
 
 /*
  * Création d'écritures
  */
-a1	= achat_fournisseur				( 'achat fournisseur avec TVA à 10%'									, '2012-01-01',1000,10 );
+a1	= achat_fournisseur		( 'achat fournisseur avec TVA à 10%'						, '2012-01-01',1000,10 );
 a2	= achat_avec_remise_et_escompte	( "achat fournisseur de 15000€ HT avec 10% remise et 4% d'escompte"		, '2012-01-01',15000, 10, 4	);
 a3	= achat_avec_forfait_assu_port	( 'achat fournisseur de 2500€ HT avec frais de port et assurance'		, '2012-01-01',2500, 200 );
 a4	= achat_avec_forfait_assu_port	( 'achat fournisseur de 2500€ HT avec frais de port et assurance'		, '2012-01-01',9000, 500 );
-a5	= paie_escompte_achat_fourniture( 'paiement fournisseur de 9568€ TTC avec escompte à 3%', '2012-01-01',9568,3 );
+a5	= paie_escompte_achat_fourniture( 'paiement fournisseur de 9568€ TTC avec escompte à 3%'			, '2012-01-01',9568,3 );
 
-a6	= achat_fournisseur				('achat MacBook Pro avec TVA à 19.6%'									, '2012-01-01', 1999, 19.6 ).o(
-	paie_achat_fourniture			('paiement immediat sans escompte'										, '', 1999*1.196 )
+a6	= achat_fournisseur		('achat MacBook Pro avec TVA à 19.6%'						, '2012-01-01', 1999, 19.6 ).o(
+	paie_achat_fourniture		('paiement immediat sans escompte'						, '', 1999*1.196 )
 	);
 
 //try{

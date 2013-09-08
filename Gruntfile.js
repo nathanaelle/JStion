@@ -6,29 +6,47 @@ module.exports = function(grunt) {
 		concat: {
 			options: {
 				separator:'',
-				banner: '/*! <%= pkg.name %> — <%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+				banner: '/*! JStion — <%= pkg.version %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 			},
-			'build/<%= pkg.name %>-<%= pkg.version %>.js' : [ '_src/core/*.js' ],
-			'build/<%= pkg.name %>.UI-backbone-<%= pkg.version %>.js' : [ '_src/backbone/*.js' ]
+			'build/JStion-<%= pkg.version %>.js' : [ '_src/core/*.js' ],
+			'build/JStion.UI-backbone-<%= pkg.version %>.js' : [ '_src/backbone/*.js' ]
 		},
 
 		uglify: {
-			'build/<%= pkg.name %>.min.js': 'build/<%= pkg.name %>-<%= pkg.version %>.js',
-			'build/<%= pkg.name %>.UI-backbone.min.js': 'build/<%= pkg.name %>.UI-backbone-<%= pkg.version %>.js'
+			'build/JStion.min.js': 'build/JStion-<%= pkg.version %>.js',
+			'build/JStion.UI-backbone.min.js': 'build/JStion.UI-backbone-<%= pkg.version %>.js'
 		},
 
 		jshint: {
-			files:[ 'build/<%= pkg.name %>-<%= pkg.version %>.js', 'build/<%= pkg.name %>.UI-backbone-<%= pkg.version %>.js' ],
+			files:[ 'build/JStion-<%= pkg.version %>.js', 'build/JStion.UI-backbone-<%= pkg.version %>.js' ],
 			options:{
-
 			}
+		},
+
+		karma: {
+			options:{
+				frameworks: ['jasmine'],
+				exclude: [ '*.js.ex' ],
+				singleRun: true,
+				browsers: ['PhantomJS'],
+				reporters: ['progress'],
+				autoWatch: false,
+				captureTimeout: 60000,
+			},
+			JStion:{
+				src:[],
+				files:[ '_dep/rollups/hmac-sha1.js', 'build/JStion.min.js', '_t/core/*.js' ],
+			}
+
 		}
+
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
+	grunt.loadNpmTasks('grunt-karma');
 
-	grunt.registerTask('test', [ 'concat', 'jshint' ]);
+	grunt.registerTask('test', [ 'concat', 'jshint', 'uglify', 'karma' ]);
 	grunt.registerTask('default', [ 'concat', 'uglify' ]);
 };
