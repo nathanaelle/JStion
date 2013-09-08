@@ -49,8 +49,8 @@ $fi.fn.Operation=(function(){
 				mouvement:	o.compose( args.slice(2) )
 			};
 
-			if(reduct(e.mouvement)){
-				console.log('bordel');
+			if(reduct(e.mouvement) >= Math.pow(10,-$fi.fix)){
+				console.log('non équilibré : '+ reduct(e.mouvement) );
 				console.log(e);
 			}
 

@@ -20,7 +20,7 @@ $fi.fn.Fragment=create_class(
 			if(this.single){
 				return this.map(function(f){
 					if(f[0] === '')	return ['',''];
-					return [ f[0], (f[1]-f[2]).toFixed(this.$.fix) ];
+					return [ f[0], (f[1]-f[2]).toFixed(window.$fi.fix) ];
 				});
 			}
 
@@ -28,7 +28,7 @@ $fi.fn.Fragment=create_class(
 				if(f[0] === '')	return ['','', ''];
 
 				return [f[0]].concat( [f[1], f[2]].map(function(i){
-					return (i>0?i.toFixed(this.$.fix):0);
+					return (i>0?i.toFixed(window.$fi.fix):0);
 				}));
 			});
 		},
@@ -36,7 +36,11 @@ $fi.fn.Fragment=create_class(
 		add:function(f){
 			if(f === undefined) return this;
 
-			return new $fi.fn.Fragment( [].concat( this, f ) );
+			//var z = [];
+			//Array.prototype.push.apply( z, this );
+			//Array.prototype.push.apply( z, f );
+
+			return new $fi.fn.Fragment( [].concat( Array.prototype.slice.call(this), Array.prototype.slice.call(f) ) );
 		},
 
 		sub:function(f){
