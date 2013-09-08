@@ -1,8 +1,13 @@
 {
-  "name": "JStion",
-  "version": "1.2.0",
-  "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-contrib-uglify": "~0.2.2"
-  }
+	"name":					"JStion",
+	"version":				"1.2.0",
+	"repository": {
+		"type":				"git",
+		"url":				""
+	},
+	"devDependencies": {
+		"grunt":			"~0.4.1",
+		"grunt-contrib-uglify":		"~0.2.4",
+		"grunt-contrib-concat":		"~0.3.0"
+	}
 }
