@@ -13,15 +13,15 @@ $fi.fn.sync = function(method,model,options){
 				console.error('no id in model for method '+method);
 				throw new Exception('no id in model for method '+method);
 			}
-			var r =this.storage.getItem(model.id);
+			r =this.storage.getItem(model.id);
 			if(r === undefined ) return undefined;
 			//console.log('read = '+ model.id + ' -- '+ r );
 
-			r= JSON.parse( r );
-			r.type = this[r.type];
-			r.data.id = model.id;
-			r.data.$ = this;
-			r= new r.type( r.data );
+			r		= JSON.parse( r );
+			r.type		= this[r.type];
+			r.data.id	= model.id;
+			r.data.$	= this;
+			r		= new r.type( r.data );
 			break;
 
 		case "create":
@@ -33,7 +33,10 @@ $fi.fn.sync = function(method,model,options){
 				}
 			}
 
-			this.storage.setItem( model.sign(), JSON.stringify( { type: getclass,  data: model } ) );
+			this.storage.setItem( model.sign(), JSON.stringify( {
+				type:	getclass, 
+				data:	model
+			} ));
 			r= model;
 			break;
 

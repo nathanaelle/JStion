@@ -19,5 +19,5 @@ var create_class=function(constructor,prototype,inheritance){
 	for (var k in prototype)	f.prototype[k] = prototype[k];
 
 	return f;
-}
+};
 

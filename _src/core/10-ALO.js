@@ -27,8 +27,12 @@
 				t = $fi.fn[t[0]];
 
 				//return new t({ id: id });
-				return this.$.sync('read',{ id: id, $:this.$ } );
+				return this.$.sync('read',{
+					id:	id,
+					$:	this.$
+				});
 			},
+
 
 			/**
 			 * generate an ID for an object
@@ -36,7 +40,8 @@
 			 * @return {string} ID of the object
 			 */
 			sign:function(){
-				return this.id= ''+CryptoJS.SHA1( JSON.stringify(this) );
+				this.id= ''+CryptoJS.SHA1( JSON.stringify(this) );
+				return this.id;
 			},
 
 
@@ -52,11 +57,9 @@
 				}
 			},
 
-
 			save:function(o){
 				return this.$.sync('update',this,o);
 			},
-
 
 			fetch:function(o){
 				var i = this;

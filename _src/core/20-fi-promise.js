@@ -3,9 +3,14 @@ $fi.fn.promise=create_class(
 		this.f	= f;
 	},
 	{
-		constrain:function(v){return v},
+		constrain:function(v){
+			return v;
+		},
+
 		grab:function(needs,vars){
-			return vars.concat(needs.slice(vars.length).map(function(n){return 1*prompt(n.f.help)}))
+			return vars.concat(needs.slice(vars.length).map(function(n){
+				return 1*prompt(n.f.help);
+			}));
 		},
 		exec:function(x) {
 			var prom = this;
@@ -16,5 +21,7 @@ $fi.fn.promise=create_class(
 				return (prom.f)(prom.constrain(x));
 			};
 		},
-		toJSON: function(){ return [ 'want', this.f ] }
+		toJSON: function(){
+			return [ 'want', this.f ];
+		}
 	} );

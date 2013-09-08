@@ -14,12 +14,22 @@ var instanciable={};
  */
 var StorageEngine={
 	fake:(function(){
-		var f=function(){ this.store={} };
+		var f=function(){
+			this.store={};
+		};
 		f.prototype={
-			setItem:function(k,v){ this.store[k]=v},
-			getItem:function(k){return this.store[k]},
-			removeItem:function(k){delete this.store[k]},
-			clear:function(){this.store={}},
+			setItem:	function(k,v){
+				this.store[k]=v;
+			},
+			getItem:	function(k){
+				return this.store[k];
+			},
+			removeItem:	function(k){
+				delete this.store[k];
+			},
+			clear:function(){
+				this.store={};
+			},
 		};
 		return new f();
 	})(),

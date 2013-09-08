@@ -1,6 +1,8 @@
 $fi.fn.op = function(name){
-	return this.e.operateurs[name] || function(){ console.log('operateur '+ c +' indefini') };
-}
+	return this.e.operateurs[name] || function(){
+		console.log('operateur '+ c +' indefini');
+	};
+};
 
 
 /**
@@ -14,23 +16,38 @@ $fi.fn.op = function(name){
 $fi.fn.create_operateur = function(name,ope){
 	this.e.operateurs[name]=function(account,f_debit,f_credit,help){
 		var f = function(x){
-			var y = ope.apply({ f_debit:f_debit,f_credit:f_credit  }, [x] );
+			var y = ope.apply({
+					f_debit:	f_debit,
+					f_credit:	f_credit
+				}, [x] );
+
 			if( y instanceof Function ) {
 				var z = function(x){
-					return [ [account].concat( y.apply({ f_debit:f_debit,f_credit:f_credit  },[x]) ) ]
-				}
-				z.toJSON	= function(){ return [ [ name, account, f_debit, f_credit, help ], x ] };
-				return z
+					return [ [account].concat( y.apply({ f_debit:f_debit,f_credit:f_credit  },[x]) ) ];
+				};
+
+				z.toJSON	= function(){
+					return [ [ name, account, f_debit, f_credit, help ], x ];
+				};
+
+				return z;
 			}
-			return [ [account].concat( y ) ]
+
+			return [ [account].concat( y ) ];
 		};
-		f.help		= function(){ return (typeof help === 'string')?help:'' };
-		f.toJSON	= function(){ return [ name, account, f_debit, f_credit, help ] };
+
+		f.help= function(){
+			return (typeof help === 'string')?help:'';
+		};
+
+		f.toJSON= function(){
+			return [ name, account, f_debit, f_credit, help ];
+		};
 
 		return f;
-	}
+	};
 
 	this.save();
 
 	return this;
-}
+};

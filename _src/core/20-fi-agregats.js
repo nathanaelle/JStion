@@ -10,14 +10,14 @@ $fi.fn.aggregate = function(){
 				if(typeof c === 'function' ) part = part.add( c(societe) );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
 				else if(c>0){
-					part = part.add(societe.flux(""+c))
+					part = part.add(societe.flux(""+c));
 				}else if(c<0){
-					part = part.sub(societe.flux(""+(-c)))
+					part = part.sub(societe.flux(""+(-c)));
 				}
-			})
+			});
 
 			return part.simplify(message);
-		}
+		};
 	}
 
 	return function(societe){
@@ -26,15 +26,15 @@ $fi.fn.aggregate = function(){
 			if(typeof c === 'function' ) part = part.add( c(societe) );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
 			else if(c>0){
-				part = part.add(societe.flux(""+c))
+				part = part.add(societe.flux(""+c));
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)))
+				part = part.sub(societe.flux(""+(-c)));
 			}
-		})
+		});
 
 		return part;
-	}
-}
+	};
+};
 
 
 
@@ -47,15 +47,15 @@ $fi.fn.ag_debit=function(){
 			if(typeof c === 'function' ) part = part.add( c(societe).debit() );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.debit() );
 			else if(c>0){
-				part = part.add(societe.flux(""+c).debit())
+				part = part.add(societe.flux(""+c).debit());
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).debit())
+				part = part.sub(societe.flux(""+(-c)).debit());
 			}
-		})
+		});
 
 		return part;
-	}
-}
+	};
+};
 
 $fi.fn.ag_credit=function(){
 	var args = [].concat( Array.prototype.slice.call( arguments ) );
@@ -66,12 +66,12 @@ $fi.fn.ag_credit=function(){
 			if(typeof c === 'function' ) part = part.add( c(societe).credit() );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.credit() );
 			else if(c>0){
-				part = part.add(societe.flux(""+c).credit())
+				part = part.add(societe.flux(""+c).credit());
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).credit())
+				part = part.sub(societe.flux(""+(-c)).credit());
 			}
-		})
+		});
 
 		return part;
-	}
-}
+	};
+};
