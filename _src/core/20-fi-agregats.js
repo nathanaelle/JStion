@@ -47,9 +47,9 @@ $fi.fn.ag_debit=function(){
 			if(typeof c === 'function' ) part = part.add( c(societe).debit() );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.debit() );
 			else if(c>0){
-				part = part.add(societe.flux(""+c).debit());
+				part = part.add(societe.flux(""+c).solde().debit());
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).debit());
+				part = part.sub(societe.flux(""+(-c)).solde().debit());
 			}
 		});
 
@@ -66,9 +66,9 @@ $fi.fn.ag_credit=function(){
 			if(typeof c === 'function' ) part = part.add( c(societe).credit() );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.credit() );
 			else if(c>0){
-				part = part.add(societe.flux(""+c).credit());
+				part = part.add(societe.flux(""+c).solde().credit());
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).credit());
+				part = part.sub(societe.flux(""+(-c)).solde().credit());
 			}
 		});
 

@@ -6,14 +6,14 @@
 $fi.fn.Entite= create_class(
 	function(o){
 		this.set_or_default(o,{
-			parent:undefined,
-			nom:'acme',
-			livre:undefined,
-			mode:'abrege',
-			fiche:{},
-			tags:{},
-			id:undefined,
-			$:undefined
+			parent:	undefined,
+			nom:	'acme',
+			livre:	undefined,
+			mode:	'abrege',
+			fiche:	{},
+			tags:	{},
+			id:	undefined,
+			$:	undefined
 		});
 
 		this.tags	= new Hash( this.tags );
