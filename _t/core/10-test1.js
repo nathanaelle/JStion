@@ -116,7 +116,6 @@ describe('Checking Operation',function(){
 			,'{"mouvement":[["401",2390.804,0],["607",1999,0],["44566",391.80400000000003,0],["512",0,2390.804],["401",0,2390.804]],"date":"2012-01-01","message":"achat MacBook Pro avec TVA à 19.6%\\npaiement immediat sans escompte"}'
 			,'{"message":"achat MacBook Pro avec TVA à 19.6%\\npaiement immediat sans escompte","mouvement":[["401",2390.804,0],["607",1999,0],["44566",391.80400000000003,0],["512",0,2390.804],["401",0,2390.804]]}'
 		]
-
 	}
 
 	for( var i in ecr )(function(i,f,s,vs){
@@ -130,10 +129,5 @@ describe('Checking Operation',function(){
 			expect( JSON.stringify( f.toVSON() ) ).toBe( vs );
 		});
 	})(i,ecr[i][0],ecr[i][1],ecr[i][2]);
-
-
-
-
-
-
 });
+

@@ -89,15 +89,8 @@ $fi.fn.Livre=create_class(
 			if( this.id === old.id )	return new this.$.Ecriture( { mouvement: [] } );
 
 			return new this.$.Ecriture( {
-				mouvement: this.lod('accounts').diff(old.lod('accounts')).sort(function(a,b){
-					if( a[1] > b[1]	) return 1;
-					if( b[1] > a[1]	) return -1;
-					if( a[1] > 0	) return (a[0]-b[0])/Math.abs(a[0]-b[0]);
-					if( a[2] > b[2]	) return -1;
-					if( b[2] > a[2]	) return 1;
-					return (b[0]-a[0])/Math.abs(b[0]-a[0]);
-				} ),
-				message: this.message
+				mouvement:	this.lod('accounts').diff(old.lod('accounts')),
+				message:	this.message
 			} );
 		},
 
