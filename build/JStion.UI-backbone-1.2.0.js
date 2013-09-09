@@ -1,4 +1,4 @@
-/*! JStion — 1.2.0 2013-09-08 */
+/*! JStion — 1.2.0 2013-09-09 */
 (function(window,$fi,Backbone){
 
 $fi.fn.m={};

@@ -129,18 +129,16 @@ $fi.create_operateur(
 /*
  * Definitions des operations sur certains comptes
  */
-var marchandise	= $fi.op('param'	)(	'607'	,1,0, 'montant marchandise'						);
-var tva		= $fi.op('taux'		)(	'44566'	,1,0, 'taux tva'								);
-var avoir_tva	= $fi.op('itaux'	)(	'44566'	,0,1, 'taux tva'								);
-var remise	= $fi.op('taux'		)(	'607'	,0,1, 'taux remise'								);
-var fournisseur = $fi.op('param'	)(	'401'	,0,1, 'montant payé au fournisseur'				);
-var reg_fourn	= $fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur');
-var sortie_bnk	= $fi.op('param'	)(	'512'	,0,1, 'sortie de la banque'						);
-var escompte	= $fi.op('taux'		)(	'765'	,0,1, "taux d'escompte"							);
-var fraisport	= $fi.op('constant'	)(	'624'	,1,0, "montat frais de transport"				);
-var assurance	= $fi.op('constant'	)(	'616'	,1,0, "montant frais d'assurance"				);
-
-console.log( JSON.stringify( marchandise ) );
+var marchandise	= $fi.op('param'	)(	'607'	,1,0, 'montant marchandise'				);
+var tva		= $fi.op('taux'		)(	'44566'	,1,0, 'taux tva'					);
+var avoir_tva	= $fi.op('itaux'	)(	'44566'	,0,1, 'taux tva'					);
+var remise	= $fi.op('taux'		)(	'607'	,0,1, 'taux remise'					);
+var fournisseur = $fi.op('param'	)(	'401'	,0,1, 'montant payé au fournisseur'			);
+var reg_fourn	= $fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur'	);
+var sortie_bnk	= $fi.op('param'	)(	'512'	,0,1, 'sortie de la banque'				);
+var escompte	= $fi.op('taux'		)(	'765'	,0,1, "taux d'escompte"					);
+var fraisport	= $fi.op('constant'	)(	'624'	,1,0, "montat frais de transport"			);
+var assurance	= $fi.op('constant'	)(	'616'	,1,0, "montant frais d'assurance"			);
 
 /*
  * Definitions des template d'écriture
@@ -150,8 +148,6 @@ var achat_avec_remise_et_escompte	= $fi.Operation( $fi.want(marchandise), $fi.wa
 var achat_avec_forfait_assu_port	= $fi.Operation( $fi.want(marchandise), $fi.want(fraisport),assurance(100),tva(19.6),fournisseur );
 var paie_escompte_achat_fourniture	= $fi.Operation( $fi.want(reg_fourn), avoir_tva(19.6), $fi.want(escompte), tva(19.6), sortie_bnk );
 var paie_achat_fourniture		= $fi.Operation( $fi.want(reg_fourn), sortie_bnk );
-
-console.log( JSON.stringify( paie_escompte_achat_fourniture ) );
 
 /*
  * Création d'écritures
