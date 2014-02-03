@@ -133,7 +133,6 @@ a6	= achat_fournisseur		('achat avec TVA à 19.6%'						, '2012-01-01', 1999, 19
 	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
 	h('Recharge de la compta sur dernier état connu');
-	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
 	buddy.append( (new $fi.v.Balance({ model: new $fi.m.Entite({ entite:$fi.societe( 'ma societe' )}) })).render().el );
 
