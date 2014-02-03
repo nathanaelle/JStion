@@ -1,0 +1,86 @@
+#buddy table{
+	min-width:250px;
+	width:auto;
+	margin:2em;
+	border-collapse:collapse;
+	float:left;
+}
+
+#buddy dd table{
+	float:none;
+}
+
+#buddy caption{
+	margin:1.5em;
+	font-size:75%;
+}
+
+#buddy td{
+	margin:0;
+	max-width:6em;
+	text-align:right;
+	border:0 none;
+	border-top:1px solid #000;
+	border-left:1px solid #000;
+}
+
+#buddy tr+tr+tr td{border-top:0 none;}
+#buddy tr{margin:0;padding:0;}
+
+#buddy hz{
+	font-size:1em;
+	padding:5px 0;
+	clear:both;
+	border:1px double #000;
+	border-left: 0 none;
+	border-right: 0 none;
+}
+
+#buddy h2{
+	clear:left;
+}
+
+
+#buddy table.etat{
+	margin:2em;
+	padding:0;
+	width:100%;
+	border:0;
+}
+
+#buddy table.etat tr td {
+	margin:0;
+	padding:0;
+	width:50%;
+	border: 1px solid #000;
+	vertical-align:top;
+}
+
+#buddy table.etat tr td table {
+	margin:0;
+	padding:0;
+	width:100%;
+	border:0;
+}
+
+#buddy table.etat tr td table tr td {
+	margin:0;
+	padding:0.3em;
+	width:75%;
+	border:0;
+	text-align:left;
+}
+
+#buddy table.etat td table tr td+td {
+	width:25%;
+	text-align:right;
+}
+
+#buddy table.etat tr td table tr.h1 td {
+	font-size:1.1em;
+	font-weight:800;
+}
+
+#buddy table.etat tr td table tr.h2 td {
+	font-weight:600;
+}
