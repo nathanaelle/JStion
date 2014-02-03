@@ -15,8 +15,8 @@
 	<script src="j/underscore.js"></script>
 	<script src="j/backbone.js"></script>
 	<script src="j/rollups/hmac-sha1.js"></script>
-	<script src="jstion.js"></script>
-	<script src="jstion-ui.js"></script>
+	<script src="JStion.min.js"></script>
+	<script src="JStion.UI-backbone.min.js"></script>
 <style>
 #buddy table{
 	margin:2em;
@@ -149,7 +149,7 @@ societe=societe
 		<p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
 	</footer>
 </div>
-<script src="javascripts/scale.fix.js"></script>
+<script src="../javascripts/scale.fix.js"></script>
 <script>
 
 var buddy = $('#buddy');
@@ -259,18 +259,18 @@ var o = {
 	buddy.append( (new $fi.v.Journal({ model: new $fi.m.Entite({ entite:societe }) })).render().el );
 
 
-	// h('Balance des comptes après écritures');
-	// buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
+	//h('Balance des comptes après écritures');
+	//buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
-	h('consultation de situation');
-	buddy.append( (new $fi.v.Fragment({ model: societe.etat('61','445') })).render().el );
+	//h('consultation de situation');
+	//buddy.append( (new $fi.v.Fragment({ model: societe.etat('61','445') })).render().el );
 
-	h('consultation de solde');
-	buddy.append( (new $fi.v.Fragment({ model: societe.solde('62','40', '445' ) })).render().el );
+	//h('consultation de solde');
+	//buddy.append( (new $fi.v.Fragment({ model: societe.solde('62','40', '445' ) })).render().el );
 
-	h('consultation des flux');
+	//h('consultation des flux');
 	var flux = societe.flux('1','2','3','4', '5','6','7','8','9');
-	buddy.append( (new $fi.v.Fragment({ model: flux })).render().el );
+	//buddy.append( (new $fi.v.Fragment({ model: flux })).render().el );
 
 	h('consultation des flux consolidé');
 	buddy.append( (new $fi.v.Fragment({ model: flux.add( flux.simplify('total') ) })).render().el );
@@ -418,11 +418,11 @@ var o = {
 	}
 
 
-	h('Compte de résultat');
-	buddy.append( (new $fi.v.Etat({ model: compte2resultat(societe) })).render().el );
+	//h('Compte de résultat');
+	//buddy.append( (new $fi.v.Etat({ model: compte2resultat(societe) })).render().el );
 
-	h('bilan');
-	buddy.append( (new $fi.v.Etat({ model: bilan(societe)	 })).render().el );
+	//h('bilan');
+	//buddy.append( (new $fi.v.Etat({ model: bilan(societe)	 })).render().el );
 
 </script></body>
 </html>
