@@ -1,5 +1,5 @@
 (function(window,undefined){
-
+"use strict";
 
 /**
  * [instanciable description]
@@ -7,6 +7,7 @@
  */
 var instanciable={};
 
+var pcg={};
 
 /**
  * Handler for several kind of Storage
@@ -14,10 +15,10 @@ var instanciable={};
  */
 var StorageEngine={
 	fake:(function(){
-		var f=function(){
+		var F=function(){
 			this.store={};
 		};
-		f.prototype={
+		F.prototype={
 			setItem:	function(k,v){
 				this.store[k]=v;
 			},
@@ -31,7 +32,7 @@ var StorageEngine={
 				this.store={};
 			},
 		};
-		return new f();
+		return new F();
 	})(),
 	local:window.localStorage,
 	session:window.sessionStorage,

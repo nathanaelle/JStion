@@ -1,18 +1,19 @@
 $fi.fn.aggregate = function(){
-	var args = [].concat( Array.prototype.slice.call( arguments ) );
+	var args = to_array( arguments );
 
 	if(typeof args[0] === 'string'){
 		var message = args.shift();
 
 		return function(societe){
-			part = new $fi.fn.Fragment();
+			var part = new $fi.fn.Fragment();
+
 			args.forEach(function(c){
 				if(typeof c === 'function' ) part = part.add( c(societe) );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
 				else if(c>0){
-					part = part.add(societe.flux(""+c));
+					part = part.add(societe.r_etat(""+c).solde());
 				}else if(c<0){
-					part = part.sub(societe.flux(""+(-c)));
+					part = part.sub(societe.r_etat(""+(-c)).solde());
 				}
 			});
 
@@ -21,14 +22,15 @@ $fi.fn.aggregate = function(){
 	}
 
 	return function(societe){
-		part = new $fi.fn.Fragment();
+		var part = new $fi.fn.Fragment();
+
 		args.forEach(function(c){
 			if(typeof c === 'function' ) part = part.add( c(societe) );
 			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c );
 			else if(c>0){
-				part = part.add(societe.flux(""+c));
+				part = part.add(societe.r_etat(""+c).solde());
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)));
+				part = part.sub(societe.r_etat(""+(-c)).solde());
 			}
 		});
 
@@ -36,39 +38,21 @@ $fi.fn.aggregate = function(){
 	};
 };
 
-
-
-$fi.fn.ag_debit=function(){
-	var args = [].concat( Array.prototype.slice.call( arguments ) );
-
-	return function(societe){
-		part = new $fi.fn.Fragment();
-		args.forEach(function(c){
-			if(typeof c === 'function' ) part = part.add( c(societe).debit() );
-			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.debit() );
-			else if(c>0){
-				part = part.add(societe.flux(""+c).solde().debit());
-			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).solde().debit());
-			}
-		});
-
-		return part;
-	};
-};
-
-$fi.fn.ag_credit=function(){
-	var args = [].concat( Array.prototype.slice.call( arguments ) );
+$fi.fn.ag_mask=function(){
+	var args = to_array( arguments );
+	var mask = args.slice(0,1).pop();
+	args = args.slice(1);
 
 	return function(societe){
-		part = new $fi.fn.Fragment();
+		var part = new $fi.fn.Fragment();
+
 		args.forEach(function(c){
-			if(typeof c === 'function' ) part = part.add( c(societe).credit() );
-			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.credit() );
+			if(typeof c === 'function' ) part = part.add( c(societe).mask(mask) );
+			else if(typeof c === 'object' && c instanceof $fi.Fragment() ) part = part.add( c.mask(mask) );
 			else if(c>0){
-				part = part.add(societe.flux(""+c).solde().credit());
+				part = part.add(societe.r_etat(""+c).solde().mask(mask));
 			}else if(c<0){
-				part = part.sub(societe.flux(""+(-c)).solde().credit());
+				part = part.sub(societe.r_etat(""+(-c)).solde().mask(mask));
 			}
 		});
 

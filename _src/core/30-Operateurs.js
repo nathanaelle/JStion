@@ -14,20 +14,17 @@ $fi.fn.op = function(name){
  * @return {Function}      [description]
  */
 $fi.fn.create_operateur = function(name,ope){
-	this.e.operateurs[name]=function(account,f_debit,f_credit,help){
+	this.e.operateurs[name]=function(account,CNumber,help){
 		var f = function(x){
-			var y = ope.apply({
-					f_debit:	f_debit,
-					f_credit:	f_credit
-				}, [x] );
+			var y = ope.apply(CNumber, [x] );
 
 			if( y instanceof Function ) {
 				var z = function(x){
-					return [ [account].concat( y.apply({ f_debit:f_debit,f_credit:f_credit  },[x]) ) ];
+					return [ [account].concat( y.apply(CNumber,[x]) ) ];
 				};
 
 				z.toJSON	= function(){
-					return [ [ name, account, f_debit, f_credit, help ], x ];
+					return [ [ name, account, CNumber.toJSON(), help ], x ];
 				};
 
 				return z;
@@ -41,7 +38,7 @@ $fi.fn.create_operateur = function(name,ope){
 		};
 
 		f.toJSON= function(){
-			return [ name, account, f_debit, f_credit, help ];
+			return [ name, account, CNumber.toJSON(), help ];
 		};
 
 		return f;

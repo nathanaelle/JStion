@@ -7,8 +7,10 @@
 <script src="../../_dep/underscore.js"></script>
 <script src="../../_dep/backbone.js"></script>
 <script src="../../_dep/rollups/hmac-sha1.js"></script>
-<script src="../../build/JStion.min.js"></script>
-<script src="../../build/JStion.UI-backbone.min.js"></script>
+<script src="../../build/JStion-2.0.0.js"></script>
+<script src="../../build/JStion.PLans-2.0.0.js"></script>
+<script src="../../build/JStion.Exts-2.0.0.js"></script>
+<script src="../../build/JStion.UI-backbone-2.0.0.js"></script>
 <style>
 html{
 	font-size:9pt;
@@ -114,71 +116,85 @@ window.k_debug = false;
 //φ=1;
 
 /*
- * Definitions des operateurs
- */
-$fi.create_operateur(
-	'param', function(x){return [ this.f_debit*x, this.f_credit*x ]}
-).create_operateur(
-	'constant', function(t){return function(x){return[ this.f_debit*t, this.f_credit*t ]}}
-).create_operateur(
-	'taux', function(t){ t=t/100; return function(x){ return[ this.f_debit*t*x, this.f_credit*t*x ]} }
-).create_operateur(
-	'itaux', function(t){ t=1-1/(1+t/100); return function(x){return[ this.f_debit*t*x, this.f_credit*t*x ]} }
-)
+* Definitions des operateurs
+*/
+$fi
+.create_operateur('param'	, function(x){			return this.scale(x)				;})
+.create_operateur('constant'	, function(t){			return function(x){ return this.scale(t)	;}})
+.create_operateur('taux'	, function(t){ t=t/100;		return function(x){ return this.scale(t*x)	;}})
+.create_operateur('itaux'	, function(t){ t=1-1/(1+t/100);	return function(x){ return this.scale(t*x)	;}});
+
+var	debit	= $fi.DC.U_Debit,
+	credit	= $fi.DC.U_Credit;
 
 /*
  * Definitions des Mouvements sur certains comptes
  */
 var m = {
 	K: {
-		capital:			$fi.op('param'	)(	'101'	,0,1, 'montant souscrit appelé et versé'		),
-		seq_sa_verse:		$fi.op('param'	)(	'1013'	,0,1, 'montant souscrit appelé et versé'		),
-		lib_sa_verse:		$fi.op('param'	)(	'1013'	,1,0, 'montant souscrit appelé et versé'		),
-		sequestre:			$fi.op('param'	)(	'467'	,1,0, 'montant sequestre'						),
-		liberation:			$fi.op('param'	)(	'467'	,0,1, 'montant libére'							),
+		capital:		$fi.op('param'	)(	'101'	,credit, 'montant souscrit appelé et versé'	),
+		seq_sa_verse:		$fi.op('param'	)(	'1013'	,credit, 'montant souscrit appelé et versé'	),
+		lib_sa_verse:		$fi.op('param'	)(	'1013'	, debit, 'montant souscrit appelé et versé'	),
+		sequestre:		$fi.op('param'	)(	'467'	, debit, 'montant sequestre'			),
+		liberation:		$fi.op('param'	)(	'467'	,credit, 'montant libére'				),
+	},
+	cloture:{
+		debit_res:		$fi.op('param'	)(	'12'	,debit, 'solde compte' ),
+		credit_res:		$fi.op('param'	)(	'12'	,credit, 'solde compte' ),
+		perte:		        $fi.op('param'	)(	'129'	,debit, 'solde compte' ),
+		benefice:		$fi.op('param'	)(	'120'	,credit, 'solde compte' ),
 	},
 	banque: {
-		depot:				$fi.op('param'	)(	'512'	,1,0, 'depot en banque'							),
-		retrait:			$fi.op('param'	)(	'512'	,0,1, 'retrait de la banque'					),
+		depot:			$fi.op('param'	)(	'512'	, debit, 'depot en banque'				),
+		retrait:		$fi.op('param'	)(	'512'	,credit, 'retrait de la banque'			),
 	},
-	frais_constitution:		$fi.op('constant')(	'2011'	,1,0, 'frais de consitution'					),
+	frais_constitution:		$fi.op('constant')(	'2011'	, debit, 'frais de consitution'			),
 	achat: {
-		service:			$fi.op('param'	)(	'604'	,1,0, 'montant de la marchandise'				),
-		non_stockable:		$fi.op('param'	)(	'606'	,1,0, 'montant de la marchandise'				),
-		marchandise:		$fi.op('param'	)(	'607'	,1,0, 'montant de la marchandise'				),
+		service:		$fi.op('param'	)(	'604'	, debit, 'montant de la marchandise'		),
+		non_stockable:		$fi.op('param'	)(	'606'	, debit, 'montant de la marchandise'		),
+		marchandise:		$fi.op('param'	)(	'607'	, debit, 'montant de la marchandise'		),
 	},
 	vente: {
-		produit:			$fi.op('param'	)(	'701'	,0,1, 'montant de la marchandise'				),
-		service:			$fi.op('param'	)(	'706'	,0,1, 'montant de la marchandise'				),
-		marchandise:		$fi.op('param'	)(	'707'	,0,1, 'montant de la marchandise'				),
+		produit:		$fi.op('param'	)(	'701'	,credit, 'montant de la marchandise'		),
+		service:		$fi.op('param'	)(	'706'	,credit, 'montant de la marchandise'		),
+		marchandise:		$fi.op('param'	)(	'707'	,credit, 'montant de la marchandise'		),
 	},
 	fournisseur:{
-		F:					$fi.op('param'	)(	'401'	,0,1, 'montant à payer au fournisseur'			),
-		regul_F:			$fi.op('param'	)(	'401'	,1,0, 'montant de la régularisation fournisseur'),
+		F:			$fi.op('param'	)(	'401'	,credit, 'montant à payer au fournisseur'		),
+		regul_F:		$fi.op('param'	)(	'401'	, debit, 'montant de la régularisation fournisseur'),
 	},
 	client:{
-		C:					$fi.op('param'	)(	'411'	,1,0, 'montant à payer par le client'			),
-		regul_C:			$fi.op('param'	)(	'411'	,0,1, 'montant de la régularisation fournisseur'),
+		C:			$fi.op('param'	)(	'411'	, debit, 'montant à payer par le client'		),
+		regul_C:		$fi.op('param'	)(	'411'	,credit, 'montant de la régularisation fournisseur'),
 	},
 	tva:{
-		deductible:			$fi.op('taux'	)(	'44566'	,1,0, 'taux tva'								),
-		regul_deductible:	$fi.op('taux'	)(	'44566'	,0,1, 'taux tva'								),
-		collectee:			$fi.op('taux'	)(	'44571'	,0,1, 'taux tva'								),
-		regul_collectee:	$fi.op('taux'	)(	'44571'	,1,0, 'taux tva'								),
+		deductible:		$fi.op('taux'	)(	'44566'	, debit, 'taux tva'				),
+		regul_deductible:	$fi.op('taux'	)(	'44566'	,credit, 'taux tva'				),
+		collectee:		$fi.op('taux'	)(	'44571'	,credit, 'taux tva'				),
+		regul_collectee:	$fi.op('taux'	)(	'44571'	, debit, 'taux tva'				),
+		solde_collectee:	$fi.op('param'	)(	'44571'	, debit, 'montant tva'				),
+		a_payer:		$fi.op('param'	)(	'44551'	,credit, 'montant à payer'			),
+		regul_a_payer:		$fi.op('param'	)(	'44551'	, debit, 'montant à déduire du restant du'	),
+		solde_deductible:	$fi.op('param'	)(	'44566'	,credit, 'montant tva'				),
+
 	},
 }
 
 
 var o = {
 	constitution:{
-		sequestre:			$fi.Operation( $fi.want(m.K.sequestre), m.K.seq_sa_verse ),
+		sequestre:		$fi.Operation( $fi.want(m.K.sequestre), m.K.seq_sa_verse ),
 		remise_fond:		$fi.Operation( $fi.want(m.K.liberation), $fi.want(m.frais_constitution), m.banque.depot ),
-		virement_pour_ordre:$fi.Operation( $fi.want(m.K.lib_sa_verse), m.K.capital ),
+		virement_pour_ordre:	$fi.Operation( $fi.want(m.K.lib_sa_verse), m.K.capital ),
+	},
+	cloture:{
+		benefice:		$fi.Operation( $fi.want(m.cloture.debit_res), m.cloture.benefice ),
+		perte:	        	$fi.Operation( $fi.want(m.cloture.credit_res), m.cloture.perte ),
 	},
 	fournisseur:{
 		non_stockable:		$fi.Operation( $fi.want(m.achat.non_stockable), $fi.want(m.tva.deductible), m.fournisseur.F ),
 		achat_marchandise:	$fi.Operation( $fi.want(m.achat.marchandise), $fi.want(m.tva.deductible), m.fournisseur.F ),
-		paiement:			$fi.Operation( $fi.want(m.fournisseur.regul_F), m.banque.retrait ),
+		paiement:		$fi.Operation( $fi.want(m.fournisseur.regul_F), m.banque.retrait ),
 	},
 	client:{
 		vente_produit:		$fi.Operation( $fi.want(m.vente.produit), $fi.want(m.tva.collectee), m.client.C ),
@@ -186,7 +202,14 @@ var o = {
 		vente_marchandise:	$fi.Operation( $fi.want(m.vente.marchandise), $fi.want(m.tva.collectee), m.client.C ),
 		encaissement:		$fi.Operation( $fi.want(m.client.regul_C), m.banque.depot ),
 	},
-
+	etat:{
+		tva_a_payer:		$fi.Operation( $fi.want(m.tva.solde_collectee), $fi.want(m.tva.solde_deductible), m.tva.a_payer ),
+		tva_a_rembourser:	$fi.Operation( $fi.want(m.tva.solde_collectee), $fi.want(m.tva.solde_deductible), m.tva.a_rembourser ),
+		deduction_accompte:	$fi.Operation( $fi.want(m.tva.regul_accompte) ,m.tva.regul_a_payer ),
+		report_credit_tva:	$fi.Operation( $fi.want(m.tva.regul_a_payer)		, m.tva.report_credit),
+		accompte_tva:		$fi.Operation( $fi.want(m.tva.accompte)			,m.banque.retrait ),
+		paiement_tva:		$fi.Operation( $fi.want(m.tva.regul_a_payer)		,m.banque.retrait ),
+	},
 }
 
 
@@ -194,189 +217,90 @@ var o = {
 	var societe = new $fi.Entite({ nom: 'FOOBAR SASU', mode:'basique', $:$fi })
 
 	societe=societe
-		.commit( o.constitution.sequestre			('constitution societe FOOBAR SASU'	,'2013-01-01', 1000			))
-		.commit( o.constitution.remise_fond			( 'remise des fonds -100€ constit'	,'2013-01-01', 1000	,100	))
-		.commit( o.constitution.virement_pour_ordre	('virement pour ordre'				,'2013-01-01', 1000			))
+		.commit( o.constitution.sequestre		({message:'constitution societe FOOBAR SASU'	,date:'2013-01-01'}, 1000	))
+		.commit( o.constitution.remise_fond		({message:'remise des fonds -100€ constit'	,date:'2013-01-01'}, 1000,100	))
+		.commit( o.constitution.virement_pour_ordre	({message:'virement pour ordre'			,date:'2013-01-01'}, 1000	))
 		.commit(
-			o.fournisseur.achat_marchandise			('achat Tablette à 19.6%'			,'2013-01-01', 600, 19.6	).o(
-			o.fournisseur.paiement					('paiement immediat'				,'2013-01-01', 600*1.196 	))
+			o.fournisseur.achat_marchandise		({message:'achat Tablette à 19.6%'		,date:'2013-01-01'}, 600, 20	).o(
+			o.fournisseur.paiement			({message:'paiement immediat'			,date:'2013-01-01'}, 600*1.20 	))
 		)
 		.commit(
-			o.fournisseur.non_stockable				('téléphonie mobile - janvier'		,'2013-01-01', 25, 19.6		).o(
-			o.fournisseur.paiement					('paiement immediat'				,'2013-01-01', 25*1.196 	))
+			o.fournisseur.non_stockable		({message:'téléphonie mobile - janvier'		,date:'2013-01-01'}, 25, 20	).o(
+			o.fournisseur.paiement			({message:'paiement immediat'			,date:'2013-01-01'}, 25*1.20 	))
 		)
-		.commit(o.client.vente_service				('vente audit'						,'2013-01-01', 2000, 19.6	))
-		.commit(o.client.encaissement				('encaissement'						,'2013-01-01', 2000*1.196	))
+		.commit(o.client.vente_service			({message:'vente audit'				,date:'2013-01-01'}, 2000, 20	))
+		.commit(o.client.encaissement			({message:'encaissement'			,date:'2013-01-01'}, 2000*1.20	))
 	;
+
+
+	function compte_col(cp,acc,col){
+		return Number(cp.r_etat(acc).solde()[0][1].toJSON()[col]);
+	}
+
+	var  cp = societe.checkout();
+
+	societe = societe.commit(o.etat.tva_a_payer		({message:'Calcul TVA exercice 1'			, date:'2013-01-30'},
+		compte_col(cp,'4457',1),
+		compte_col(cp,'4456',0) ));
+
+	cp = societe.checkout();
+	societe = societe.commit(o.etat.paiement_tva		({message:'Paiement TVA exercice 1'			, date:'2013-01-30'},
+		compte_col(cp,'4455',1) ));
+
+
+	cp = societe.checkout();
+
+	var my_compte_resultat = $fi.cloture.compte2resultat( cp );
+	societe = societe.commit( $fi.cloture.calcul_resultat( { message:'determination resultat', date:'2013-01-30' }, cp,
+		function(e){
+			return $fi.Operation( $fi.want(  $fi.op('param')(e,credit, '')  ), m.cloture.debit_res );
+		},
+		function(e){
+			return $fi.Operation( $fi.want(  $fi.op('param')(e,debit, '')  ), m.cloture.credit_res );
+		}
+	));
+
+	societe = societe.commit( $fi.cloture.ecriture_resultat( societe.checkout(),
+		function(res){
+			return o.cloture.perte({ message:'enregistrement perte', date:'2013-01-30' },res);
+
+		},
+		function(res){
+			return o.cloture.benefice({ message:'enregistrement benefice', date:'2013-01-30' },res);
+		}
+	));
+
+	cp = societe.checkout();
+	var my_bilan = $fi.cloture.bilan(cp,debit,credit);
+
+	var bilan = $fi.cloture.ecriture_bilan( { message:'cloture bilan', date:'2013-01-30' }, cp,
+		function(e){
+			return $fi.Operation( $fi.want(  $fi.op('param')(e,credit, '')  ) );
+		},
+		function(e){
+			return $fi.Operation( $fi.want(  $fi.op('param')(e,debit, '')  ) );
+		}
+	);
+
+	societe = societe.commit(bilan[0]);
+
+
 
 	h('Journal des écritures');
 	buddy.append( (new $fi.v.Journal({ model: new $fi.m.Entite({ entite:societe }) })).render().el );
 
 
-	// h('Balance des comptes après écritures');
-	// buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
+	h('Balance des comptes après écritures');
+	buddy.append( (new $fi.v.Balance({ model:new $fi.m.Entite({ entite:societe }) })).render().el );
 
-	h('consultation de situation');
-	buddy.append( (new $fi.v.Fragment({ model: societe.etat('61','445') })).render().el );
 
-	h('consultation de solde');
-	buddy.append( (new $fi.v.Fragment({ model: societe.solde('62','40', '445' ) })).render().el );
-
-	h('consultation des flux');
-	var flux = societe.flux('1','2','3','4', '5','6','7','8','9');
-	buddy.append( (new $fi.v.Fragment({ model: flux })).render().el );
-
-	h('consultation des flux consolidé');
+	var position=societe.checkout();
+	h('consultation des situations consolidées');
+	var flux = position.r_etat('1','2','3','4', '5','6','7','8','9');
 	buddy.append( (new $fi.v.Fragment({ model: flux.add( flux.simplify('total') ) })).render().el );
 
-
-	/**
-	 * definition de 2 fonctions
-	 *
-	 * une pour le compte de résultat
-	 *
-	 * une pour le bilan
-	 */
-
-
-	function compte2resultat(societe){
-		var charge;
-		var produit;
-		var part;
-
-		part = $fi.aggregate(
-			 $fi.aggregate('Achats de marchandises'													,607,-609						)
-			,$fi.aggregate('Variation des stocks (marchandises)'									,6037							)
-			,$fi.aggregate('Achats de matières premières et autres approvisionnements'				,601,602,-609					)
-			,$fi.aggregate('Variation des stocks (matières premières et autres approvisionnements)'	,6031,6032,-6039				)
-			,$fi.aggregate('Autres achats et charges externes'										,604,605,606,61,62,-619,-629	)
-			,$fi.aggregate('Impôts, taxes et versements assimilés'									,631,633,635,637				)
-			,$fi.aggregate('Salaires et traitements'												,641,644,648					)
-			,$fi.aggregate('Charges sociales'														,645,646,647,648				)
-			,$fi.aggregate('Dotations aux amortissements'											,6811,6812						)
-			,$fi.aggregate('Dotations aux provisions'												,6815,6816,6817					)
-			,$fi.aggregate("Autres charges d'exploitation"											,65,-655						)
-		);
-
-		charge = $fi.aggregate(
-			 $fi.aggregate("# Charges d'exploitation"												,part							)
-			,part
-			,$fi.aggregate('')
-			,$fi.aggregate('# Quote-part de résultat sur opérations faites en commun'				,655							)
-			,$fi.aggregate('')
-			,$fi.aggregate("# Charges financières Produits financiers"								,66								)
-			,$fi.aggregate('Dont intérêts et charges assimilées'									,661,664,665,668				)
-			,$fi.aggregate('')
-			,$fi.aggregate("# Charges exceptionnelles"												,67								)
-			,$fi.aggregate('')
-			,$fi.aggregate('# Impôts sur les bénéfices'												,695,696,697,698,699			)
-			,$fi.aggregate('# Participation des salariés aux résultats'								,691							)
-		);
-
-		part = $fi.aggregate(
-			 $fi.aggregate('Ventes de marchandises'													,707,-7097						)
-			,$fi.aggregate('Production vendue (biens et services)'									,70,-707,-709,7097				)
-		);
-
-		produit = $fi.aggregate(
-			 $fi.aggregate("## Chiffre d'affaire"													,part							)
-			,$fi.aggregate("Dont à l'export")
-			,$fi.aggregate('')
-			,$fi.aggregate('Production stockée'														,713							)
-			,$fi.aggregate("Production immobilisée"													,72								)
-			,$fi.aggregate("Production immobilisée"													,74								)
-			,$fi.aggregate("Autres produits (dont reprises sur amortissements et transferts de charges)"	,78,79,75,-755			)
-		);
-
-		produit = $fi.aggregate(
-			 $fi.aggregate("# Produit d'exploitation"												,produit						)
-			,part
-			,produit
-			,$fi.aggregate('')
-			,$fi.aggregate('# Quote-part de résultat sur opérations faites en commun'				,755							)
-			,$fi.aggregate('')
-			,$fi.aggregate("# Produits financiers"													,76								)
-			,$fi.aggregate('Dont intérêts et produit assimilées'									,763,764,765,768				)
-			,$fi.aggregate('Dont produits de participations'										,761							)
-			,$fi.aggregate('')
-			,$fi.aggregate("# Produits exceptionnels"												,77								)
-			)
-
-		return {col_1: charge(societe).single_col(true), col_2: produit(societe).inv().single_col(true) };
-	}
-
-
-	function bilan(societe){
-		var part;
-		var actif;
-		var passif;
-
-		part= $fi.aggregate(
-			 $fi.aggregate("Immobilisations incorporelles"	,201, 203, 205, 206, 207, 208, 232, 237 )
-			,$fi.aggregate("Immobilisations corporelles"	,211, 212, 213, 214, 215, 218, 231, 238 )
-			,$fi.aggregate("Immobilisations financières"	,261, 266, 267, 268, 271, 272, 273, 274, 275, 276, 277 )
-		);
-
-		actif =$fi.aggregate(
-			 $fi.aggregate("Stocks matières premières, en-cours de production produits (intermédiaires, finis) et autres approvisionnements"	, 31, 32, 33, 34, 35 )
-			,$fi.aggregate("Stocks marchandises"							, 37 )
-			,$fi.aggregate("Avances, acomptes versés sur commandes"			,4091 )
-			,$fi.aggregate("Créances clients et comptes rattachés"			,411, 413, 416, 417, 418 )
-			,$fi.aggregate("Autres créances"								,4096, 4097, 4098, 425,  441, 462, 465, $fi.ag_debit( 443, 444, 445, 448, 451, 456,428, 438, 467, 468, 478 ))
-			,$fi.aggregate("Valeurs mobilières de placement"				,501, 502, 503, 504, 505, 506, 507, 508 )
-			,$fi.aggregate("Disponibilités et instruments de trésorerie"	,511, 515, 516,  53, 54,$fi.ag_debit(517, 518, 512, 514, 52 ))
-			,$fi.aggregate("Charges constatées d'avance"					,486	)
-		);
-
-		actif= $fi.aggregate(
-			 $fi.aggregate("Capital souscrit non appelé",109	)
-			,$fi.aggregate("## ACTIF IMMOBILISÉ"			,part	)
-			,part
-			,$fi.aggregate("")
-			,$fi.aggregate("## ACTIF CIRCULANT"			, actif )
-			,actif
-			,$fi.aggregate("")
-			,$fi.aggregate("Comptes de régularisation"	,169, 476, 481 )
-			,$fi.aggregate("# TOTAL ACTIF"				,109, part, actif, 169, 476,481 )
-		);
-
-		part= $fi.aggregate(
-			 $fi.aggregate("Capital social, primes"	,101, 108, 104 )
-			,$fi.aggregate("Résultat de l'exercice"	,120, 129 )
-			,$fi.aggregate("Subventions d'investissement"	,131, 138 )
-			,$fi.aggregate("Autres capitaux propres"	,110, 119, 105, 1061, 1063, 1064, 1068, 14 )
-		);
-
-		passif= $fi.aggregate(
-			 $fi.aggregate("Emprunts et dettes assimilées"	,161,163,164,165,166,1675,168,17,426,519, $fi.ag_credit(451,455,456,467,512,514,517,518 ) )
-			,$fi.aggregate("Avances, acomptes sur commandes en cours"	,4191 )
-			,$fi.aggregate("Dettes fournisseurs - comptes rattachés"	,401,403,408 )
-			,$fi.aggregate("Autres dettes"	,421,422,424,427,431,437,442,446,447,457,269,279,404,405,4196,4198,464,509, $fi.ag_credit(428,438,443,444,445,448,467,468,478 ) )
-		);
-
-		passif= $fi.aggregate(
-			$fi.aggregate("## CAPITAUX PROPRES"	, part)
-			,part
-			,$fi.aggregate("")
-			,$fi.aggregate("Autres fonds propres"	,1671, 1674 )
-			,$fi.aggregate("Provisions risques et charges"	,151, 153, 155, 156, 157, 158 )
-			,$fi.aggregate("")
-			,$fi.aggregate("## DETTES"	, passif )
-			,passif
-			,$fi.aggregate("")
-			,$fi.aggregate("Produits constatés d'avance, écarts de conversion du passif"	,487, 477 )
-			,$fi.aggregate("# TOTAL PASSIF"	, part, passif,1671, 1674 ,151, 153, 155, 156, 157, 158 ,487, 477 )
-		);
-
-		return { col_1: actif(societe).single_col(true), col_2:passif(societe).inv().single_col(true) }
-	}
-
-
 	h('Compte de résultat');
-	buddy.append( (new $fi.v.Etat({ model: compte2resultat(societe) })).render().el );
-
-	h('bilan');
-	buddy.append( (new $fi.v.Etat({ model: bilan(societe)	 })).render().el );
+	buddy.append( (new $fi.v.Etat({ model: my_compte_resultat })).render().el );
 
 </script></body>
 </html>

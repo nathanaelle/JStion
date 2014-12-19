@@ -1,67 +1,116 @@
-$fi.fn.Operation=(function(){
+$fi.fn.Operation=(function (){
 
-	var f = function(mouvement){
-		this.mouvement = mouvement;
-		this.needs = mouvement.filter(function(e){
-			return e instanceof $fi.fn.promise;
-		});
-	};
-
-	var reduct_signed = function(x){
-		return x.map(function(e){
+	var reduct_signed = function (x){
+		return x.map(function (e){
 			return e[1]-e[2];
-		}).reduce(function(a,b){
+		}).reduce(function (a,b){
 			return a+b;
 		},0);
 	};
 
-	var reduct = function(x){
-		return Math.abs(x.map(function(e){
+	var reduct_unsigned = function (x){
+		return Math.abs(x.map(function (e){
 			return e[1]-e[2];
-		}).reduce(function(a,b){
+		}).reduce(function (a,b){
 			return a+b;
 		},0));
 	};
 
-
-	f.prototype={
-		compose:function(vars){
-			if(this.needs.length > vars.length ) vars = this.needs[0].grab( this.needs, vars );
-
-			return this.mouvement.reduce(function(e1,e2){
-				// console.log([ 'compose',e1,e2,vars])
-				if(e2 instanceof $fi.fn.promise){
-					e2 = e2.exec(vars.shift());
-				}
-				return e2(reduct(e1)).concat(e1);
-			}, [] );
-		}
+	var reduct = function (x){
+		if(x.length === 0)	return 0;
+		return Math.abs(x.reduce(function (old,v){ return old.add(v[1]); }, x[0][1].zero() ).reduction());
 	};
 
-	return function(){
-		var ope = [].concat(Array.prototype.slice.call( arguments ));
-		var o = new f( ope );
-		var r=function(){
-			var args = [].concat( Array.prototype.slice.call( arguments ) );
+	var equilibre = function (x){
+		if(x.length === 0)	return true;
+		return Math.abs(x.reduce(function (old,v){ return old.add(v[1]); }, x[0][1].zero() ).inEquilibrium());
+	};
+
+
+	var operations = create_monad()
+
+		.lift_value('o',function (mouvement,f){
+			if( f === undefined )		return compose_operation( mouvement );
+			if( f.bind === undefined )	return compose_operation( mouvement );
+
+			return compose_operation( mouvement.concat( f.bind( function (mouvement){
+				return mouvement;
+			} )));
+		})
+
+		.lift_value('grab',function (mouvement, vars){
+			var t = mouvement
+				.filter(function (e){
+					return e instanceof $fi.fn.promise;
+				}).slice(vars.length);
+
+			if(t.length === 0 ) return vars;
+
+			return vars.concat(
+				t
+				.map(function (n){
+					return Number(prompt(n.f.help));
+				}));
+		})
+
+		.lift_value('toJSON', function (mouvement) {
+			return mouvement.slice(0);
+		})
+
+		.lift_value('compose',function (mouvement,vars) {
+			return mouvement.reduce(function (e1,e2){
+			//	console.log([ 'compose', reduct(e1), e1, e2, vars ].map(JSON.stringify));
+
+				if(e2 instanceof $fi.fn.promise){
+					var arg = vars.shift();
+					if( arg instanceof Function ) arg = reduct(arg( e1 ));
+					e2 = e2.resolve(arg);
+				}
+
+				return e2(reduct(e1)).concat(e1);
+			}, [] );
+		})
+
+
+		.method('resolve', function (){
+			var args = to_array( arguments );
+			var meta = args.shift();
+
 			var e = {
-				message:	args[0],
-				date:		args[1],
-				mouvement:	o.compose( args.slice(2) )
+				meta:		meta,
+				mouvement:	this.compose( this.grab( args ))
 			};
 
-			if(reduct(e.mouvement) >= Math.pow(10,-$fi.fix)){
+			if(!equilibre(e.mouvement)) {
 				console.log('non équilibré : '+ reduct(e.mouvement) );
 				console.log(e);
+				throw new Exception('Ecriture non équilibrée');
 			}
 
 			return new $fi.fn.Ecriture(e);
-		};
-		r.toJSON=function(){
-			return ope;
-		};
+		});
 
-		for( var k in o ) r[k] = o[k];
+
+	var compose_operation = function ( mouvement ){
+		var op = operations( mouvement );
+
+		var r = op.resolve.bind( op );
+
+		r.o = op.o.bind( op );
+		r.bind = op.bind.bind( op );
+		r.toJSON= op.toJSON.bind( op );
 
 		return r;
 	};
+
+	return function (){
+		return compose_operation( to_array( arguments ) );
+	};
 })();
+
+
+
+$fi.fn.peek_last = function (e){
+//	console.log(JSON.stringify(e) );
+	return [e[0]];
+};

@@ -22,75 +22,60 @@ $fi.fn.Compte=create_class(
 			})).id;
 		}
 
-		if(this.id === undefined)		this.save();
-		else if(this.account === undefined)	this.fetch();
+		if(this.id === undefined)	this.save();
 	},{
 
+		sigma:function (Type){
+			return this.lod('journal').cast(Type).reduce(function(a,b){
+				return a.add(b);
+			}, Type.ZERO );
+		},
+
+		sub_sigma:function (Type){
+			return this.lod('subaccounts').sub_sigma(Type);
+		},
+
+		is_parent_of: function	(account){
+			return account.indexOf(this.account) === 0;
+		},
+
+		eq: function	(account){
+			return account === this.account;
+		},
+
+		fragment: function (func){
+			return new (this.$.Fragment)([ [ this.account, func(this) ] ]);
+		},
+
 		find_and_map:function(targeted_accs, func ){
-			var o = this;
-			var acc = this.account;
+			var o		= this;
+			var maybe_empty	= this.$.Fragment.prototype.maybe_empty;
 
 			// do I know any targeted account ?
-			targeted_accs = targeted_accs.filter( function(a){
-				return a.indexOf(acc) ===0;
-			});
+			var extract = filter_and_dispatch( this.is_parent_of.bind(this), this.eq.bind(this) )(targeted_accs);
 
-			// make a list of triplet [ account, debit, credit ] for this account and its sub account
-			return maybe_empty(
-					targeted_accs.filter( function(a){
-						return a === acc;
+			// make a list of fragment for this account and its sub account
+			return	maybe_empty( extract.exact )
+				.bind(function(){
+					return o.fragment(func);
+				})
+				.add(
+					maybe_empty( extract.sub )
+					.bind(function(v){
+						return o.lod('subaccounts').find_any( v, func );
 					})
-				).bind(function(){
-					return new $fi.fn.Fragment( [ [acc].concat( func(o) ) ] );
-				}).add(
-					maybe_empty(
-						targeted_accs.filter( function(a){
-							return a !== acc;
-						})
-					).bind(function(v){
-						return o.lod('subaccounts').find_any(v, func );
-					}));
-		},
-
-
-		_solde:function(s) {
-			return [s[0]-s[1], s[1]-s[0] ].map(function(i){
-				return i>0?i:0;
-			});
-		},
-
-		sigma:function(){
-			return this.lod('journal').sigma();
-		},
-
-		r_sigma:function(){
-			return [ this.sigma() ].concat( this.lod('subaccounts').r_sigma() ).reduce(function(s0,s1){
-				return [s0[0]+s1[0], s0[1]+s1[1]];
-			}, [0,0]);
-		},
-
-		solde:function(){
-			return this._solde( this.sigma() );
-		},
-
-		r_solde:function(){
-			return this._solde( this.r_sigma() );
+				);
 		},
 
 		diff:function(old){
 			if( this.id === old.id) return [];
 			var diff = [];
-			var cur = this;
 			if(this.account !== old.account )		throw new Exception('Y u duno compare different accounts ?');
 
 			if(this.journal !== old.journal ){
-				var c = cur.account;
-				diff = this.lod('journal').diff( old.lod( 'journal') );
-				diff = diff[0].map(function(i){
-					return [c, i, '' ];
-				}).concat( diff[1].map(function(i){
-					return [c, '', i ];
-				}) );
+				diff = this.lod('journal').diff( old.lod( 'journal') ).map(function(e){
+					return [ this.account, e ];
+				}, this);
 			}
 
 			if( this.subaccounts.join(' ') === old.subaccounts.join(' '))	return diff;
@@ -107,47 +92,47 @@ $fi.fn.Compte=create_class(
 			};
 		},
 
-		toVSON:function(){
-			var s=this.sigma();
+		toVSON:function(Type){
+			var s=this.sigma(Type);
 			return {
 				account:	this.account,
 				nom:		this.nom,
-				subaccounts:	this.lod('subaccounts').toVSON(),
-				debit:		((s[0]>0)?s[0].toFixed(this.$.fix):''),
-				credit:		((s[1]>0)?s[1].toFixed(this.$.fix):''),
-				solde_debit:	((s[0]-s[1]>0)?(s[0]-s[1]).toFixed(this.$.fix):''),
-				solde_credit:	((s[1]-s[0]>0)?(s[1]-s[0]).toFixed(this.$.fix):''),
-			}; },
+				subaccounts:	this.lod('subaccounts').toVSON(Type),
+				data:		s.toJSON(),
+				solde:		s.quotient().toJSON(),
+			};
+		},
 
 		mouvement:function(m){
-			var acc = this.account;
 			var subaccounts;
-			m = m.filter( function(e){
-				return e[0].indexOf(acc) ===0;
-			});
+
+			m = filter_and_dispatch(
+				function(e){
+					return this.is_parent_of(e[0]);
+				}.bind(this),
+				function(e){
+					return this.eq(e[0]);
+				}.bind(this)
+			)( m );
+
+			function values(e){
+				return e[1];
+			}
 
 			// is it my problem ?
-			if(m.length===0)	return false;
+			if(m.exact.length===0 && m.sub.length===0)	return false;
 
-			var e_m = m.filter( function(e){
-				return e[0] === acc;
-			}).map( function(e){
-				return [e[1], e[2]];
-			} );
+			var e_m = m.exact.map( values );
 
-			var s_m = m.filter( function(e){
-				return e[0] !== acc;
-			});
+			var s_m = m.sub;
 
 			// may it my subaccounts problem ?
 			if( s_m.length>0 ){
 				subaccounts = this.lod('subaccounts').mouvement({ mouvement: s_m });
-				if(!subaccounts)	e_m = m.map( function(e){
-					return [e[1], e[2]];
-				} );
+				if(!subaccounts)	e_m = e_m.concat( s_m.map( values ));
 			}
 
-			return new $fi.fn.Compte({
+			return new this.$.Compte({
 				journal:	this.lod('journal').append( e_m ).id,
 				account:	this.account,
 				nom:		this.nom,
@@ -157,4 +142,3 @@ $fi.fn.Compte=create_class(
 		},
 
 	}, ALO );
-

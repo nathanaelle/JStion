@@ -1,6 +1,6 @@
 /**
  * Livre Comptable
- * 
+ *
  * Décrit l'état du Livre Comptable contenant toutes les écritures à un instant donné.
  */
 $fi.fn.Livre=create_class(
@@ -8,15 +8,18 @@ $fi.fn.Livre=create_class(
 		this.set_or_default(o, {
 			accounts:	undefined,
 			parents:	undefined,
-			date:		'',
-			message:	'',
-			author:		'',
+			meta:		{
+				message:	'',
+			},
 			id:		undefined,
+			type:		'DC',
 			$:		undefined
 		});
 
+		this.meta	= new Hash( this.meta );
+
 		if(o.mode){
-			this.message='mise à zéro';
+			this.meta.message='mise à zéro';
 			this.accounts= ( new this.$.Comptes( [], this.$ ) ).first_root_init( pcg[o.mode] );
 		}
 
@@ -25,16 +28,15 @@ $fi.fn.Livre=create_class(
 		toJSON:function(){
 			return {
 				parents:	this.parents,
-				date:		this.date,
-				author:		this.author,
-				message:	this.message,
-				accounts:	this.accounts
+				meta:		this.meta,
+				type:		this.type,
+				accounts:	this.accounts,
 			};
 		},
 
 		toVSON:function(){
-			r = this.toJSON();
-			r.accounts=this.lod('accounts').toVSON();
+			var r = this.toJSON();
+			r.accounts=this.lod('accounts').toVSON( this.$[this.type] );
 			return r;
 		},
 
@@ -42,15 +44,10 @@ $fi.fn.Livre=create_class(
 			return new this.$.Livre({
 				accounts:	this.lod('accounts').mouvement(e),
 				parents:	[ this.id ],
-				message:	e.message||'',
-				date:		e.date||'',
-				author:		e.author||'',
+				meta:		e.meta,
+				type:		this.type,
 				$:		this.$,
 			});
-		},
-
-		find_any_and_map:	function(targeted_accs,func){
-			return this.lod('accounts').find_any(targeted_accs,func );
 		},
 
 		back:function(i){
@@ -63,7 +60,8 @@ $fi.fn.Livre=create_class(
 		log:function(){
 			return {
 				id:		this.id,
-				message:	this.message
+				parents:	this.parents,
+				meta:		this.meta
 			};
 		},
 
@@ -77,21 +75,69 @@ $fi.fn.Livre=create_class(
 			return stack;
 		},
 
+		checkout:	 function	(id){
+			var r = this.lod(id ||this.id);
+			return (r instanceof this.$.Livre)?r:undefined;
+		},
+
 		diff:function(id){
+			var Type = this.$[this.type];
 			var old;
-			if(id instanceof $fi.fn.Livre ) {
+
+			if(id instanceof this.$.Livre ) {
 				old = id;
 			} else {
-				if(!(typeof id === 'string' && id.indexOf('Livre:')===0))	throw new Exception('need a Livre ref');
-				old = new $fi.fn.Livre({'id': id});
+				old = this.lod( id );
+				console.log([id, old]);
 			}
 
-			if( this.id === old.id )	return new this.$.Ecriture( { mouvement: [] } );
+			if( this.id === old.id )	return new this.$.Ecriture( { mouvement: [], meta: { message: '' } } );
 
 			return new this.$.Ecriture( {
-				mouvement:	this.lod('accounts').diff(old.lod('accounts')),
-				message:	this.message
+				mouvement:	this.lod('accounts').diff(old.lod('accounts')).map(function(e){
+					return [ e[0], new Type(e[1]) ];
+				}),
+				meta:		this.meta
 			} );
 		},
 
+		find_any_and_map:	function(targeted_accs,func){
+			return this.lod('accounts').find_any(targeted_accs, func.bind( null, this.$[this.type] ) );
+		},
+
+		s_etat:	function (){
+			var targets = to_array( arguments );
+
+			var func = function (T,c) {
+				return (new (c.$.Fragment)([[ c.account, c.sigma(T).quotient() ]])).add(
+					c.lod('subaccounts').map(func).reduce(function(a,b){
+						return a.add(b);
+					}, new $fi.fn.Fragment() )
+				);
+			}.bind( null, this.$[this.type] );
+
+			return this.lod('accounts').map(function(c){
+				return [c, targets.filter(function(e){
+					return e.indexOf(c.account)===0;
+				}).length ];
+			}).filter(function(e){
+				return e[1] > 0;
+			}).map(function(e){
+				return e[0];
+			}).map( func ).reduce(function(a,b){
+				return a.add(b);
+			}, new $fi.fn.Fragment() );
+		},
+
+		etat:	function (){
+			return this.find_any_and_map( to_array( arguments ),function (T,c) {
+				return c.sigma(T);
+			});
+		},
+
+		r_etat:	function (){
+			return this.find_any_and_map( to_array( arguments ),function (T,c) {
+				return c.sigma(T).add( c.sub_sigma(T) );
+			});
+		},
 	}, ALO );

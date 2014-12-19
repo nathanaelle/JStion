@@ -2,7 +2,7 @@
 	instanciable[k]=$fi.fn[k];
 });
 
-window.$fi = new $fi();
+window.$fi = new $fi();		// jshint ignore:line
 window.$fi.fn = $fi.prototype;
 
 })(window);

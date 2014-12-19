@@ -1,4 +1,4 @@
-/*! JStion — 1.2.0 2013-09-09 */
+/*! JStion — 2.0.0 2014-12-19 */
 (function(window,$fi,Backbone){
 
 $fi.fn.m={};
@@ -7,19 +7,30 @@ $fi.fn.v={};
 $fi.fn.m.Entite=
 	Backbone.Model.extend({
 		history:function(	){ return this.get('entite').history(); },
+		checkout:function(i	){ return this.get('entite').checkout(i); },
 		back:	function(i	){ return this.get('entite').back(i); },
 		current:function(	){ return this.get('entite').back(0); },
 		nom:	function(	){ return this.get('entite').nom; },
 		toJSON:	function(	){ return this.get('entite').toJSON(); },
 		toVSON:	function(	){ return this.get('entite').toVSON(); },
 	});
+$fi.fn.v.is_empty=function(v){
+	//console.log([v, Number(v)]);
+	return (Number(v) === 0);
+};
+
 $fi.fn.v.b2=
-	_.template('<tr><th><%=account%><td><%=debit%><td><%=credit%><td><%=solde_debit%><td><%=solde_credit%></tr><% _.each( subaccounts, function(c){%><%= window.$fi.v.b2(c) %><% }); %>');
+	_.template('<% if(_.filter(data, window.$fi.fn.v.is_empty).length != data.length ) { %>'+
+	'<tr><th><%=account%>' +
+	'<% _.each( data, function(f){%><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td><% }) %>'+
+	'<% _.each( solde, function(f){%><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td><% }) %>'+
+	'</tr>'+'<% } %>'+
+	'<% _.each( subaccounts, function(c){%><%= window.$fi.v.b2(c) %><% }); %>');
 
 $fi.fn.v.Balance=
 	Backbone.View.extend({
 		el:'<table>',
-		template:_.template('<caption><%=nom%> — <%=message%></caption>'+
+		template:_.template('<caption><%=nom%> — <%=meta.message%></caption>'+
 			'<tr><th>compte<th>debit<th>credit<th>Solde débiteur<th>Solde créditeur</tr><% _.each( livre.accounts, function(c){ %><%= window.$fi.v.b2(c) %><% }); %>'),
 
 		render:function(ev){ $(this.el).html(this.template(this.model.toVSON())); return this; },
@@ -27,9 +38,9 @@ $fi.fn.v.Balance=
 $fi.fn.v.Ecriture=
 	Backbone.View.extend({
 		el:'<table>',
-		template:_.template('<caption><%= message %></caption>'+
+		template:_.template('<caption><%= meta.message %></caption>'+
 			'<tr><th>compte</th><th>debit</th><th>credit</th></tr>'+
-			'<% _.each( mouvement, function(l){ %><tr><th><%= l[0] %></th><td><%= l[1]?l[1].toFixed(window.$fi.fix):"" %></td><td><%= l[2]?l[2].toFixed(window.$fi.fix):"" %></td></tr> <% }) %></table>' ),
+			'<% _.each( mouvement, function(l){ %><tr><th><%= l[0] %></th><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td></tr> <% }) %></table>' ),
 
 		render:function(ev){ $(this.el).html(this.template(this.model.toVSON())); return this; },
 	});
@@ -50,25 +61,29 @@ $fi.fn.v.Fragment=
 		el:'<table>',
 		template:_.template(
 			'<tr><th>compte</th><th>debit</th><th>credit</th></tr>'+
-			'<% _.each( d, function(l){ %><tr><th><%= l[0] %></th><td><%= l[1] %></td><td><%= l[2] %></td></tr> <% }) %></table>' ),
+			'<% _.each( d, function(l){ %><tr><th><%= l[0] %></th>'+
+			'<% _.each( l[1], function(f){%><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td><% }) %>'+
+			'</tr> <% }) %></table>' ),
 
 		render:function(ev){ $(this.el).html(this.template({d:this.model.toVSON()})); return this; },
 	});
 $fi.fn.v.Journal=
 	Backbone.View.extend({
 		el:'<dl>',
-		template:_.template('<dt><%=message%><% if(mouvement.length){%><dd><table><tr><th>compte<th>debit<th>crédit</tr>'+
-			'<% _.each( mouvement, function(l){ %><tr><th><%= l[0] %></th><td><%= l[1]?l[1].toFixed(window.$fi.fix):"" %></td><td><%= l[2]?l[2].toFixed(window.$fi.fix):"" %></td></tr> <% }) %>'+
+		template:_.template('<dt><%= meta.date %> : <%= meta.message %><% if(mouvement.length){%><dd><table><tr><th>compte<th>debit<th>crédit</tr>'+
+			'<% _.each( mouvement, function(l){ %><tr><th><%= l[0] %></th>'+
+			'<% _.each( l[1], function(f){%><td><%= (window.$fi.fn.v.is_empty(f))?"":f %></td><% }) %>'+
+			'</tr> <% }) %>'+
 			'</table><% } %>'),
 
 		render:function(ev){
 			var view	= this;
 			var model	= this.model;
-			var livre	= model.current();
 			var el		= $(this.el);
-			_.each(model.history(),function(log){
+			_.each(model.history().slice().reverse(),function(log){
+				if(log.parents === undefined ) return;
+				var livre = model.checkout(log.id);
 				el.append(view.template( livre.diff( livre.back(1) ).toVSON() ));
-				livre = livre.back(1);
 			});
 			return this;
 		},

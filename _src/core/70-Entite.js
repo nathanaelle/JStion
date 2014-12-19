@@ -1,19 +1,20 @@
 /**
  * Entite comptable
- * 
+ *
  * Decrit une entité comptable tel qu'une entreprise, une société, une association, ...
  */
 $fi.fn.Entite= create_class(
-	function(o){
+	function (o){
 		this.set_or_default(o,{
-			parent:	undefined,
-			nom:	'acme',
-			livre:	undefined,
-			mode:	'abrege',
-			fiche:	{},
-			tags:	{},
-			id:	undefined,
-			$:	undefined
+			parents:	undefined,
+			nom:		'acme',
+			livre:		undefined,
+			mode:		'abrege',
+			fiche:		{},
+			tags:		{},
+			id:		undefined,
+			type:		'DC',
+			$:		undefined,
 		});
 
 		this.tags	= new Hash( this.tags );
@@ -22,92 +23,120 @@ $fi.fn.Entite= create_class(
 		if( this.livre === undefined ){
 			this.livre=( new this.$.Livre({
 				mode:	this.mode,
+				type:	this.type,
 				$:	this.$
 			}) ).id;
 		}
-		if(!this.id) this.save();
+
+		if(!this.id){
+			this.save();
+			this.$.update_ent( this );
+		}
 	},{
-		toJSON:function(){
+		toJSON:function (){
 			return {
-				parent:	this.parent,
-				nom:	this.nom,
-				mode:	this.mode,
-				fiche:	this.fiche,
-				livre:	this.livre,
-				tags:	this.tags
+				parents:	this.parents,
+				nom:		this.nom,
+				mode:		this.mode,
+				fiche:		this.fiche,
+				livre:		this.livre,
+				type:		this.type,
+				tags:		this.tags
 			};
 		},
 
-		toVSON:function(){
+		toVSON:function (){
 			var r =this.toJSON();
 			r.livre=this.lod('livre').toVSON();
-			r.message=this.log().message;
+			r.meta=this.log().meta;
 			return r;
 		},
 
-		tag:function(tag){
+		tag:function (tag){
 			return this.lod( this.tags[tag] );
 		},
 
-		set_tag:function(tag,livre_ref)	{
+		set_tag:function (tag,livre_ref)	{
 			var t = {};
 			t[tag] = livre_ref || this.livre;
 
-			return $this.$.update( new $fi.fn.Entite({
-				parent:		this.id,
-				nom:		this.nom,
-				livre:		this.livre,
-				mode:		this.mode,
-				fiche:		this.fiche,
-				tags:		this.tag.concat( t ),
-				$:		this.$,
-			}) );
-		},
-
-		commit:function(e){
-			return this.$.update( new $fi.fn.Entite({
-				parent:		this.id,
-				nom:		this.nom,
-				livre:		this.lod('livre').commit(e).id,
-				mode:		this.mode,
-				fiche:		this.fiche,
-				tags:		this.tags,
-				$:		this.$,
-			}) );
-		},
-
-		etat:	function(){
-			return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) {
-				return c.sigma();
+			return new $fi.fn.Entite({
+				parents:		[ this.id ],
+				nom:			this.nom,
+				livre:			this.livre,
+				mode:			this.mode,
+				fiche:			this.fiche,
+				tags:			this.tag.concat( t ),
+				type:			this.type,
+				$:			this.$,
 			});
 		},
 
-		solde:	function(){
-			return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) {
-				return c.solde();
+		commit:function (e){
+			return new $fi.fn.Entite({
+				parents:		[ this.id ],
+				nom:			this.nom,
+				livre:			this.lod('livre').commit(e).id,
+				mode:			this.mode,
+				fiche:			this.fiche,
+				tags:			this.tags,
+				type:			this.type,
+				$:			this.$,
 			});
 		},
 
-		flux:	function(){
-			return this.lod('livre').find_any_and_map( [].concat(Array.prototype.slice.call( arguments )),function(c) {
-				return c.r_sigma();
-			});
-		},
-
-		log:	function(){
+		log:	function (){
 			return this.lod('livre').log();
 		},
 
-		history:function(){
+		checkout:	 function	(id){
+			var r = this.lod(id ||this.livre);
+			return (r instanceof this.$.Livre)?r:undefined;
+		},
+
+		history:function (){
 			return this.lod('livre').history();
 		},
 
-		back:	function(i){
-			return this.lod('livre').back(i);
+		back:	function (i){
+			if(i===0) return this;
+			if(this.parents === undefined) return this;
+			// @bug BUG only handle linear case
+			return this.lod( this.parents[0] ).back(i-1);
 		},
 
-		diff:	function(id){
-			return this.lod('livre').diff(id);
+		diff:	function (id){
+			if(! (id instanceof this.$.Livre )){
+				if(id instanceof String) id=this.lod(id);
+				if(id instanceof this.$.Entite) id=this.lod(id.livre);
+			}
+
+			if(id instanceof this.$.Livre)	return this.lod('livre').diff(id);
+
+			throw new TypeError('id must be an Livre or Entity');
 		},
 
 	}, ALO );
+
+$fi.fn.update_ent= function (o){
+	this.save(function (){
+		this.entities[o.nom] = o.id;
+	});
+};
+
+$fi.fn.entity	= function (name,options){
+	options=options||{};
+	options.mode=options.mode||'abrege';
+
+	this.entities[name] = this.entities[name] || {};
+
+	if(!!this.entities[name])	return this.sync('read', { id: this.entities[name] });
+
+	return this.save(function (){
+		console.log( this.set_or_default.call({ nom: name, $:this }, {},options ) );
+		var ent = new this.Entite({ nom: name, $:this });
+
+		this.entities[name] = ent.id;
+		return ent;
+	});
+};

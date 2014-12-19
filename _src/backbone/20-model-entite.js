@@ -1,6 +1,7 @@
 $fi.fn.m.Entite=
 	Backbone.Model.extend({
 		history:function(	){ return this.get('entite').history(); },
+		checkout:function(i	){ return this.get('entite').checkout(i); },
 		back:	function(i	){ return this.get('entite').back(i); },
 		current:function(	){ return this.get('entite').back(0); },
 		nom:	function(	){ return this.get('entite').nom; },

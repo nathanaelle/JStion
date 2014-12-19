@@ -13,9 +13,9 @@ $fi.fn.sync = function(method,model,options){
 				console.error('no id in model for method '+method);
 				throw new Exception('no id in model for method '+method);
 			}
+
 			r =this.storage.getItem(model.id);
 			if(r === undefined ) return undefined;
-			//console.log('read = '+ model.id + ' -- '+ r );
 
 			r		= JSON.parse( r );
 			r.type		= this[r.type];
@@ -26,15 +26,12 @@ $fi.fn.sync = function(method,model,options){
 
 		case "create":
 		case "update":
-			for( var k in instanciable ){
-				if(model instanceof this[k]){
-					getclass=k;
-					break;
-				}
-			}
+			getclass = Object.keys(instanciable).filter(function(k){
+				return	(model instanceof this[k]);
+			}.bind(this) );
 
 			this.storage.setItem( model.sign(), JSON.stringify( {
-				type:	getclass, 
+				type:	getclass,
 				data:	model
 			} ));
 			r= model;
@@ -46,6 +43,6 @@ $fi.fn.sync = function(method,model,options){
 	}
 
 	options.success(r);
-	return r;
 
+	return r;
 };
